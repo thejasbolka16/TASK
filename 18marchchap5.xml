@@ -1,0 +1,2531 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<book-part>
+  <book-part-meta>
+    <title-group>
+      <label>Chapter 5</label>
+      <title>Chapter 5</title>
+    </title-group>
+  </book-part-meta>
+  <body>
+      <p>Chapter 5</p>
+      <p>Symmetric Encryption</p>
+      <p>The symmetric setting considers two parties who share a key and will use this key to imbue commu-</p>
+      <p>nicated data with various security attributes. The main security goals are privacy and authenticity</p>
+      <p>of the communicated data. The present chapter looks at privacy. A later chapter looks at authen-</p>
+      <p>ticity. Chapters 3 and 4 describe tools we shall use here.</p>
+    <sec>
+      <title>5.1</title>
+      <p>Symmetric encryption schemes</p>
+      <p>The primitive we will consider is called an encryption scheme. Such a scheme speciﬁes an encryption</p>
+      <p>algorithm, which tells the sender how to process the plaintext using the key, thereby producing the</p>
+      <p>ciphertext that is actually transmitted. An encryption scheme also speciﬁes a decryption algorithm,</p>
+      <p>which tells the receiver how to retrieve the original plaintext from the transmission while possibly</p>
+      <p>performing some veriﬁcation, too. Finally, there is a key-generation algorithm, which produces a</p>
+      <p>key that the parties need to share. The formal description follows.</p>
+      <p>Deﬁnition 5.1 A symmetric encryption scheme SE = (K, E, D) consists of three algorithms, as</p>
+      <p>follows:</p>
+      <p>•</p>
+      <p>The randomized key generation algorithm K returns a string K. We let Keys(SE) denote the</p>
+      <p>set of all strings that have non-zero probability of being output by K. The members of this</p>
+      <p>set are called keys. We write K</p>
+      <p>$←K for the operation of executing K and letting K denote</p>
+      <p>the key returned.</p>
+      <p>•</p>
+      <p>The encryption algorithm E, which might be randomized or stateful, takes a key K ∈Keys(SE)</p>
+      <p>and a plaintext M ∈{0, 1}∗to return a ciphertext C ∈{0, 1}∗∪{⊥}. We write C</p>
+      <p>$←EK(M)</p>
+      <p>for the operation of executing E on K and M and letting C denote the ciphertext returned.</p>
+      <p>•</p>
+      <p>The deterministic decryption algorithm D takes a key K ∈Keys(SE) and a ciphertext C ∈</p>
+      <p>{0, 1}∗to return some M ∈{0, 1}∗∪{⊥}.</p>
+      <p>We write M ←DK(C) for the operation of</p>
+      <p>executing D on K and C and letting M denote the message returned.</p>
+      <p>The scheme is said to provide correct decryption if for any key K ∈Keys(SE), any sequence of</p>
+      <p>messages M1, . . . , Mq ∈{0, 1}∗, and any sequence of ciphertexts C1</p>
+      <p>$←EK(M1), C2</p>
+      <p>$←EK(M2), . . . ,</p>
+      <p>93</p>
+      <p>94</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>Cq</p>
+      <p>$←EK(Mq) that may arise in encrypting M1, . . . , Mq, it is the case that DK(Ci) = Mi for each</p>
+      <p>Ci ̸= ⊥.</p>
+      <p>The key-generation algorithm, as the deﬁnition indicates, is randomized. It takes no inputs. When</p>
+      <p>it is run, it ﬂips coins internally and uses these to select a key K. Typically, the key is just a random</p>
+      <p>string of some length, in which case this length is called the key length of the scheme. When two</p>
+      <p>parties want to use the scheme, it is assumed they are in possession of a key K generated via K.</p>
+      <p>How they came into joint possession of this key K in such a way that the adversary did not get</p>
+      <p>to know K is not our concern here, and will be addressed later. For now we assume the key has</p>
+      <p>been shared.</p>
+      <p>Once in possession of a shared key, the sender can run the encryption algorithm with key K and</p>
+      <p>input message M to get back a string we call the ciphertext. The latter can then be transmitted</p>
+      <p>to the receiver.</p>
+      <p>The encryption algorithm may be either randomized or stateful. If randomized, it ﬂips coins</p>
+      <p>and uses those to compute its output on a given input K, M. Each time the algorithm is invoked,</p>
+      <p>it ﬂips coins anew. In particular, invoking the encryption algorithm twice on the same inputs may</p>
+      <p>not yield the same response both times.</p>
+      <p>We say the encryption algorithm is stateful if its operation depends on a quantity called the</p>
+      <p>state that is initialized in some pre-speciﬁed way. When the encryption algorithm is invoked on</p>
+      <p>inputs K, M, it computes a ciphertext based on K, M and the current state. It then updates the</p>
+      <p>state, and the new state value is stored. (The receiver does not maintain matching state and, in</p>
+      <p>particular, decryption does not require access to any global variable or call for any synchronization</p>
+      <p>between parties.) Usually, when there is state to be maintained, the state is just a counter. If there</p>
+      <p>is no state maintained by the encryption algorithm the encryption scheme is said to be stateless.</p>
+      <p>The encryption algorithm might be both randomized and stateful, but in practice this is rare: it</p>
+      <p>is usually one or the other but not both.</p>
+      <p>When we talk of a randomized symmetric encryption scheme we mean that the encryption</p>
+      <p>algorithm is randomized. When we talk of a stateful symmetric encryption scheme we mean that</p>
+      <p>the encryption algorithm is stateful.</p>
+      <p>The receiver, upon receiving a ciphertext C, will run the decryption algorithm with the same</p>
+      <p>key used to create the ciphertext, namely compute DK(C). The decryption algorithm is neither</p>
+      <p>randomized nor stateful.</p>
+      <p>Many encryption schemes restrict the set of strings that they are willing to encrypt.</p>
+      <p>(For</p>
+      <p>example, perhaps the algorithm can only encrypt plaintexts of length a positive multiple of some</p>
+      <p>block length n, and can only encrypt plaintexts of length up to some maximum length.) These</p>
+      <p>kinds of restrictions are captured by having the encryption algorithm return the special symbol ⊥</p>
+      <p>when fed a message not meeting the required restriction. In a stateless scheme, there is typically a</p>
+      <p>set of strings M, called the plaintext space, such that</p>
+      <p>M ∈M iﬀPr[K</p>
+      <p>$←K; C</p>
+      <p>$←EK(M) : C ̸= ⊥] = 1</p>
+      <p>In a stateful scheme, whether or not EK(M) returns ⊥depends not only on M but also possibly on</p>
+      <p>the value of the state variable. For example, when a counter is being used, it is typical that there</p>
+      <p>is a limit to the number of encryptions performed, and when the counter reaches a certain value</p>
+      <p>the encryption algorithm returns ⊥no matter what message is fed to it.</p>
+      <p>The correct decryption requirement simply says that decryption works: if a message M is</p>
+      <p>encrypted under a key K to yield a ciphertext C, then one can recover M by decrypting C under</p>
+      <p>K. This holds, however, only if C ̸= ⊥. The condition thus says that, for each key K ∈Keys(SE)</p>
+      <p>Bellare and Rogaway</p>
+      <p>95</p>
+      <p>and message M ∈{0, 1}∗, with probability one over the coins of the encryption algorithm, either</p>
+      <p>the latter outputs ⊥or it outputs a ciphertext C which upon decryption yields M. If the scheme</p>
+      <p>is stateful, this condition is required to hold for every value of the state.</p>
+      <p>Correct decryption is, naturally, a requirement before one can use a symmetric encryption</p>
+      <p>scheme in practice, for if this condition is not met, the scheme fails to communicate information</p>
+      <p>accurately. In analyzing the security of symmetric encryption schemes, however, we will see that</p>
+      <p>it is sometimes useful to be able to consider ones that do not meet this condition.</p>
+    </sec>
+    <sec>
+      <title>5.2</title>
+      <p>Some symmetric encryption schemes</p>
+      <p>We now provide a few examples of encryption schemes. We stress that not all of the schemes that</p>
+      <p>follow are secure encryption schemes. Some are secure and some are not, as we will see later. All</p>
+      <p>the schemes here satisfy the correct decryption requirement.</p>
+    </sec>
+    <sec>
+      <title>5.2.1</title>
+      <p>The one-time-pad encryption scheme</p>
+      <p>We begin with the classical one-time-pad.</p>
+      <p>Scheme 5.2 [One-time-pad encryption] The one-time-pad encryption scheme SE = (K, E, D)</p>
+      <p>is stateful and deterministic. The key-generation algorithm simply returns a random k-bit string K,</p>
+      <p>where the key-length k is a parameter of the scheme, so that the key space is Keys(SE) = {0, 1}k.</p>
+      <p>The encryptor maintains a counter ctr which is initially zero.</p>
+      <p>The encryption and decryption</p>
+      <p>algorithms operate as follows:</p>
+      <p>algorithm EK(M)</p>
+      <p>Let static ctr ←0</p>
+      <p>Let m ←|M|</p>
+      <p>if ctr + m &gt; k then return ⊥</p>
+      <p>C ←M ⊕K[ctr + 1 .. ctr + m]</p>
+      <p>ctr ←ctr + m</p>
+      <p>return ⟨ctr −m, C⟩</p>
+      <p>algorithm DK(⟨ctr, C⟩)</p>
+      <p>Let m ←|M|</p>
+      <p>if ctr + m &gt; k then return ⊥</p>
+      <p>M ←C ⊕K[ctr + 1 .. ctr + m]</p>
+      <p>return M</p>
+      <p>Here X[i .. j] denotes the i-th through j-th bit of the binary string X. By ⟨ctr, C⟩we mean a string</p>
+      <p>that encodes the number ctr and the string C. The most natural encoding is to encode ctr using</p>
+      <p>some ﬁxed number of bits, at least lg k, and to prepend this to C. Conventions are established so</p>
+      <p>that every string Y is regarded as encoding some ctr, C for some ctr, C. The encryption algorithm</p>
+      <p>XORs the message bits with key bits, starting with the key bit indicated by one plus the current</p>
+      <p>counter value. The counter is then incremented by the length of the message. Key bits are not</p>
+      <p>reused, and thus if not enough key bits are available to encrypt a message, the encryption algorithm</p>
+      <p>returns ⊥. Note that the ciphertext returned includes the value of the counter. This is to enable</p>
+      <p>decryption. (Recall that the decryption algorithm, as per Deﬁnition 5.1, must be stateless and</p>
+      <p>deterministic, so we do not want it to have to maintain a counter as well.)</p>
+    </sec>
+    <sec>
+      <title>5.2.2</title>
+      <p>Some modes of operation</p>
+      <p>The following schemes rely either on a family of permutations (i.e., a blockcipher) or a family of</p>
+      <p>functions. Eﬀectively, the mechanisms spell out how to use the blockcipher to encrypt. We call</p>
+      <p>96</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>algorithm EK(M)</p>
+      <p>if (|M| mod n ̸= 0 or |M| = 0) then return ⊥</p>
+      <p>Break M into n-bit blocks M[1] · · · M[m]</p>
+      <p>for i ←1 to m do</p>
+      <p>C[i] ←EK(M[i])</p>
+      <p>C ←C[1] · · · C[m]</p>
+      <p>return C</p>
+      <p>algorithm DK(C)</p>
+      <p>if (|C| mod n ̸= 0 or |C| = 0) then return ⊥</p>
+      <p>Break C into n-bit blocks C[1] · · · C[m]</p>
+      <p>for i ←1 to m do</p>
+      <p>M[i] ←E−1</p>
+      <p>K (C[i])</p>
+      <p>M ←M[1] · · · M[m]</p>
+      <p>return M</p>
+      <p>Figure 5.1: ECB mode.</p>
+      <p>such a mechanism a mode of operation of the blockcipher. For some of the schemes it is convenient</p>
+      <p>to assume that the length of the message to be encrypted is a positive multiple of a block length</p>
+      <p>associated to the family. Accordingly, we will let the encryption algorithm returns ⊥if this is</p>
+      <p>not the case. In practice, one could pad the message appropriately so that the padded message</p>
+      <p>always had length a positive multiple of the block length, and apply the encryption algorithm to</p>
+      <p>the padded message. The padding function should be injective and easily invertible. In this way</p>
+      <p>you would create a new encryption scheme.</p>
+      <p>The ﬁrst scheme we consider is ECB (Electronic Codebook Mode), whose security is considered</p>
+      <p>in Section 5.5.1.</p>
+      <p>Scheme 5.3 [ECB mode]</p>
+      <p>Let E: K × {0, 1}n →{0, 1}n be a blockcipher.</p>
+      <p>Operating it in</p>
+      <p>ECB (Electronic Code Book) mode yields a stateless symmetric encryption scheme SE = (K, E, D).</p>
+      <p>The key-generation algorithm simply returns a random key for the blockcipher, meaning it picks</p>
+      <p>a random string K</p>
+      <p>$←K and returns it. The encryption and decryption algorithms are depicted</p>
+      <p>in Fig. 5.1. “Break M into n-bit blocks M[1] · · · M[m]” means to set m = |M|/n and, for i ∈</p>
+      <p>{1, . . . , m}, set M[i] to the i-th n-bit block in M, that is, (i −1)n + 1 through in of M. Similarly</p>
+      <p>for breaking C into C[1] · · · C[m]. Notice that this time the encryption algorithm did not make any</p>
+      <p>random choices. (That does not mean it is not, technically, a randomized algorithm; it is simply a</p>
+      <p>randomized algorithm that happened not to make any random choices.)</p>
+      <p>The next scheme, cipher-block chaining (CBC) with random initial vector, is the most popular</p>
+      <p>block-cipher mode of operation, used pervasively in practice.</p>
+      <p>Scheme 5.4 [CBC$ mode] Let E: K×{0, 1}n →{0, 1}n be a blockcipher. Operating it in CBC</p>
+      <p>mode with random IV yields a stateless symmetric encryption scheme, SE = (K, E, D). The key</p>
+      <p>generation algorithm simply returns a random key for the blockcipher, K</p>
+      <p>$←K. The encryption</p>
+      <p>and decryption algorithms are depicted in Fig. 5.2. The IV (“initialization vector”) is C[0], which</p>
+      <p>Bellare and Rogaway</p>
+      <p>97</p>
+      <p>algorithm EK(M)</p>
+      <p>if (|M| mod n ̸= 0 or |M| = 0) then return ⊥</p>
+      <p>Break M into n-bit blocks M[1] · · · M[m]</p>
+      <p>C[0] ←IV</p>
+      <p>$←{0, 1}n</p>
+      <p>for i ←1 to m do</p>
+      <p>C[i] ←EK(C[i −1] ⊕M[i])</p>
+      <p>C ←C[1] · · · C[m]</p>
+      <p>return ⟨IV, C⟩</p>
+      <p>algorithm DK(⟨IV, C⟩)</p>
+      <p>if (|C| mod n ̸= 0 or |M| = 0) then return ⊥</p>
+      <p>Break C into n-bit blocks C[1] · · · C[m]</p>
+      <p>C[0] ←IV</p>
+      <p>for i ←1 to m do</p>
+      <p>M[i] ←E−1</p>
+      <p>K (C[i]) ⊕C[i −1])</p>
+      <p>M ←M[1] · · · M[m]</p>
+      <p>return M</p>
+      <p>Figure 5.2: CBC$ mode.</p>
+      <p>is chosen at random by the encryption algorithm. This choice is made independently each time the</p>
+      <p>algorithm is invoked.</p>
+      <p>For the following schemes it is useful to introduce some notation. If n ≥1 and i ≥0 are integers</p>
+      <p>then we let [i]n denote the n-bit string that is the binary representation of integer i mod 2n. If we</p>
+      <p>use a number i ≥0 in a context for which a string I ∈{0, 1}n is required, it is understood that</p>
+      <p>we mean to replace i by I = [i]n. The following is a counter-based version of CBC mode, whose</p>
+      <p>security is considered in Section 5.5.3.</p>
+      <p>Scheme 5.5 [CBCC mode]</p>
+      <p>Let E: K × {0, 1}n →{0, 1}n be a blockcipher. Operating it in</p>
+      <p>CBC mode with counter IV yields a stateful symmetric encryption scheme, SE = (K, E, D). The</p>
+      <p>key generation algorithm simply returns a random key for the blockcipher, K</p>
+      <p>$←K. The encryptor</p>
+      <p>maintains a counter ctr which is initially zero.</p>
+      <p>The encryption and decryption algorithms are</p>
+      <p>depicted in Fig. 5.3. The IV (“initialization vector”) is C[0], which is set to the current value of</p>
+      <p>the counter. The counter is then incremented each time a message is encrypted. The counter is a</p>
+      <p>static variable, meaning that its value is preserved across invocations of the encryption algorithm.</p>
+      <p>The CTR (counter) modes that follow are not much used, to the best of our knowledge, but</p>
+      <p>perhaps wrongly so. We will see later that they have good privacy properties. In contrast to CBC,</p>
+      <p>the encryption procedure is parallelizable, which can be exploited to speed up the process in the</p>
+      <p>presence of hardware support. It is also the case that the methods work for strings of arbitrary</p>
+      <p>bit lengths, without doing anything “special” to achieve this end. There are two variants of CTR</p>
+      <p>mode, one random and the other stateful, and, as we will see later, their security properties are</p>
+      <p>diﬀerent. For security analyses see Section 5.7 and Section 5.10.1.</p>
+      <p>98</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>algorithm EK(M)</p>
+      <p>static ctr ←0</p>
+      <p>if (|M| mod n ̸= 0 or |M| = 0) then return ⊥</p>
+      <p>Break M into n-bit blocks M[1] · · · M[m]</p>
+      <p>if ctr ≥2n then return ⊥</p>
+      <p>C[0] ←IV ←[ctr]n</p>
+      <p>for i ←1 to m do</p>
+      <p>C[i] ←EK(C[i −1] ⊕M[i])</p>
+      <p>C ←C[1] · · · C[m]</p>
+      <p>ctr ←ctr + 1</p>
+      <p>return ⟨IV, C⟩</p>
+      <p>algorithm DK(⟨IV, C⟩)</p>
+      <p>if (|C| mod n ̸= 0 or |C| = 0) then return ⊥</p>
+      <p>Break C into n-bit blocks C[1] · · · C[m]</p>
+      <p>if IV + m &gt; 2n then return ⊥</p>
+      <p>C[0] ←IV</p>
+      <p>for i ←1 to m do</p>
+      <p>M[i] ←E−1</p>
+      <p>K (C[i]) ⊕C[i −1])</p>
+      <p>M ←M[1] · · · M[m]</p>
+      <p>return M</p>
+      <p>Figure 5.3: CBCC mode.</p>
+      <p>algorithm EK(M)</p>
+      <p>m ←⌈|M|/n⌉</p>
+      <p>R</p>
+      <p>$←{0, 1}n</p>
+      <p>Pad ←FK(R + 0) ∥FK(R + 1) ∥· · · ∥FK(R + m −1)</p>
+      <p>Pad ←the ﬁrst |M| bits of Pad</p>
+      <p>return C ←⟨R, C′⟩</p>
+      <p>algorithm DK(⟨R, C′⟩)</p>
+      <p>m ←⌈|C′|/n⌉</p>
+      <p>Pad ←FK(R) ∥FK(R + 1) ∥· · · ∥FK(R + m −1)</p>
+      <p>Pad ←the ﬁrst |C′| bits of Pad</p>
+      <p>M ←C′ ⊕Pad</p>
+      <p>return M</p>
+      <p>Figure 5.4: CTR$ mode using a family of functions F: K × {0, 1}n →{0, 1}n. This version of</p>
+      <p>counter mode is randomized and stateless.</p>
+      <p>Scheme 5.6 [CTR$ mode]</p>
+      <p>Let F: K × {0, 1}n →{0, 1}n be a family of functions. (Possibly</p>
+      <p>a blockcipher, but not necessarily.) Then CTR mode over F with a random starting point is a</p>
+      <p>Bellare and Rogaway</p>
+      <p>99</p>
+      <p>algorithm EK(M)</p>
+      <p>static ctr ←0</p>
+      <p>m ←⌈|M|/n⌉</p>
+      <p>If ctr + m −1 ≥2n then return ⊥</p>
+      <p>Pad ←FK(ctr + 0) ∥FK(ctr + 1) ∥· · · ∥FK(ctr + m −1)</p>
+      <p>Pad ←the ﬁrst |M| bits of Pad</p>
+      <p>C ←M ⊕Pad</p>
+      <p>ctr ←ctr + m</p>
+      <p>return ⟨ctr −m, C⟩</p>
+      <p>algorithm DK(⟨i, C⟩)</p>
+      <p>m ←⌈|C|/n⌉</p>
+      <p>if i + m −1 ≥2n then return ⊥</p>
+      <p>Pad ←FK(i + 1 −1) ∥FK(i + 1) ∥· · · ∥FK(i + m −1)</p>
+      <p>Pad ←the ﬁrst |C| bits of Pad</p>
+      <p>M ←Pad ⊕C</p>
+      <p>return M</p>
+      <p>Figure 5.5: CTRC mode using a family of functions F: K × {0, 1}n →{0, 1}n. This version of</p>
+      <p>counter mode uses stateful (but deterministic) encryption.</p>
+      <p>probabilistic, stateless symmetric encryption scheme, SE = (K, E, D). The key-generation algo-</p>
+      <p>rithm simply returns a random key for E. The encryption and decryption algorithms are depicted</p>
+      <p>in Fig. 5.4. The starting point R is used to deﬁne a sequence of values on which FK is applied to</p>
+      <p>produce a “pseudo one-time pad” to which the plaintext is XORed. The starting point R chosen by</p>
+      <p>the encryption algorithm is a random n-bit string. To add an n-bit string R to an integer i—when</p>
+      <p>we write FK(R + i)—convert the n-bit string R into an integer in the range [0 .. 2n −1] in the</p>
+      <p>usual way, add this number to i, take the result modulo 2n, and then convert this back into an</p>
+      <p>n-bit string. Note that the starting point R is included in the ciphertext, to enable decryption. On</p>
+      <p>encryption, the pad Pad is understood to be the empty string when m = 0.</p>
+      <p>We now give the counter-based version of CTR mode.</p>
+      <p>Scheme 5.7 [CTRC mode] Let F: K × {0, 1}n →{0, 1}n be a family of functions (possibly a</p>
+      <p>blockcipher, but not necessarily). Operating it in CTR mode with a counter starting point is a</p>
+      <p>stateful symmetric encryption scheme, SE = (K, E, D), which we call CTRC. The key-generation</p>
+      <p>algorithm simply returns a random key for F. The encryptor maintains a counter ctr which is</p>
+      <p>initially zero. The encryption and decryption algorithms are depicted in Fig. 5.5. Position index</p>
+      <p>ctr is not allowed to wrap around: the encryption algorithm returns ⊥if this would happen. The</p>
+      <p>position index is included in the ciphertext in order to enable decryption. The encryption algorithm</p>
+      <p>updates the position index upon each invocation, and begins with this updated value the next time</p>
+      <p>it is invoked.</p>
+      <p>We will return to the security of these schemes after we have developed the appropriate notions.</p>
+      <p>100</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+    </sec>
+    <sec>
+      <title>5.3</title>
+      <p>Issues in privacy</p>
+      <p>Let us ﬁx a symmetric encryption scheme SE = (K, E, D). Two parties share a key K for this</p>
+      <p>scheme, this key having being generated as K</p>
+      <p>$←K. The adversary does not a priori know K. We</p>
+      <p>now want to explore the issue of what the privacy of the scheme might mean. For this chapter,</p>
+      <p>security is privacy, and we are trying to get to the heart of what security is about.</p>
+      <p>The adversary is assumed able to capture any ciphertext that ﬂows on the channel between</p>
+      <p>the two parties. It can thus collect ciphertexts, and try to glean something from them. Our ﬁrst</p>
+      <p>question is: what exactly does “glean” mean? What tasks, were the adversary to accomplish them,</p>
+      <p>would make us declare the scheme insecure? And, correspondingly, what tasks, were the adversary</p>
+      <p>unable to accomplish them, would make us declare the scheme secure?</p>
+      <p>It is easier to think about insecurity than security, because we can certainly identify adversary</p>
+      <p>actions that indubitably imply the scheme is insecure. So let us begin here.</p>
+      <p>For example, if the adversary can, from a few ciphertexts, derive the underlying key K, it can</p>
+      <p>later decrypt anything it sees, so if the scheme allowed easy key recovery from a few ciphertexts it</p>
+      <p>is deﬁnitely insecure.</p>
+      <p>Now, the mistake that is often made is to go on to reverse this, saying that if key recovery is</p>
+      <p>hard, then the scheme is secure. This is certainly not true, for there are other possible weaknesses.</p>
+      <p>For example, what if, given the ciphertext, the adversary could easily recover the plaintext M</p>
+      <p>without ﬁnding the key? Certainly the scheme is insecure then too.</p>
+      <p>So should we now declare a scheme secure if it is hard to recover a plaintext from the ciphertext?</p>
+      <p>Many people would say yes. Yet, this would be wrong too.</p>
+      <p>One reason is that the adversary might be able to ﬁgure out partial information about M. For</p>
+      <p>example, even though it might not be able to recover M, the adversary might, given C, be able</p>
+      <p>to recover the ﬁrst bit of M, or the sum of all the bits of M. This is not good, because these bits</p>
+      <p>might carry valuable information.</p>
+      <p>For a concrete example, say I am communicating to my broker a message which is a sequence</p>
+      <p>of “buy” or “sell” decisions for a pre-speciﬁed sequence of stocks. That is, we have certain stocks,</p>
+      <p>numbered 1 through m, and bit i of the message is 1 if I want to buy stock i and 0 otherwise. The</p>
+      <p>message is sent encrypted. But if the ﬁrst bit leaks, the adversary knows whether I want to buy</p>
+      <p>or sell stock 1, which may be something I don’t want to reveal. If the sum of the bits leaks, the</p>
+      <p>adversary knows how many stocks I am buying.</p>
+      <p>Granted, this might not be a problem at all if the data were in a diﬀerent format. However,</p>
+      <p>making assumptions, or requirements, on how users format data, or how they use it, is a bad and</p>
+      <p>dangerous approach to secure protocol design. An important principle of good cryptographic design</p>
+      <p>is that the encryption scheme should provide security regardless of the format of the plaintext. Users</p>
+      <p>should not have to worry about the how they format their data: they format it as they like, and</p>
+      <p>encryption should provide privacy nonetheless.</p>
+      <p>Put another way, as designers of security protocols, we should not make assumptions about</p>
+      <p>data content or formats. Our protocols must protect any data, no matter how formatted. We view</p>
+      <p>it as the job of the protocol designer to ensure this is true.</p>
+      <p>At this point it should start becoming obvious that there is an inﬁnite list of insecurity proper-</p>
+      <p>ties, and we can hardly attempt to characterize security as their absence. We need to think about</p>
+      <p>security in a diﬀerent and more direct way and arrive at some deﬁnition of it.</p>
+      <p>This important task is surprisingly neglected in many treatments of cryptography, which will</p>
+      <p>provide you with many schemes and attacks, but never actually deﬁne the goal by saying what</p>
+      <p>Bellare and Rogaway</p>
+      <p>101</p>
+      <p>an encryption scheme is actually trying to achieve and when it should be considered secure rather</p>
+      <p>than merely not known to be insecure. This is the task that we want to address.</p>
+      <p>One might want to say something like: the encryption scheme is secure if given C, the adversary</p>
+      <p>has no idea what M is. This however cannot be true, because of what is called a priori information.</p>
+      <p>Often, something about the message is known. For example, it might be a packet with known</p>
+      <p>headers. Or, it might be an English word. So the adversary, and everyone else, has some information</p>
+      <p>about the message even before it is encrypted.</p>
+      <p>We want schemes that are secure in the strongest possible natural sense. What is the best we</p>
+      <p>could hope for? It is useful to make a thought experiment. What would an “ideal” encryption be</p>
+      <p>like? Well, it would be as though some angel took the message M from the sender and delivered it</p>
+      <p>to the receiver, in some magic way. The adversary would see nothing at all. Intuitively, our goal is</p>
+      <p>to approximate this as best as possible. We would like encryption to have the properties of ideal</p>
+      <p>encryption. In particular, no partial information would leak.</p>
+      <p>We do deviate from the ideal in one way, though. Encryption is not asked to hide the length</p>
+      <p>of the plaintext string. This information not only can leak but is usually supposed to be known to</p>
+      <p>the adversary a priori.</p>
+      <p>As an example, consider the ECB encryption scheme of Scheme 5.3. Given the ciphertext, can</p>
+      <p>an eavesdropping adversary ﬁgure out the message? It is hard to see how, since it does not know K,</p>
+      <p>and if F is a “good” blockcipher, then it ought to have a hard time inverting FK without knowledge</p>
+      <p>of the underlying key. Nonetheless this is not a good scheme. Consider just the case n = 1 of a</p>
+      <p>single block message. Suppose a missile command center has just two messages, 1n for ﬁre and 0n</p>
+      <p>for don’t ﬁre. It keeps sending data, but always one of these two. What happens? When the ﬁrst</p>
+      <p>ciphertext C1 goes by, the adversary may not know what is the plaintext. But then, let us say it</p>
+      <p>sees a missile taking oﬀ. Now, it knows the message M1 underlying C1 was 1n. But then it can</p>
+      <p>easily decrypt all subsequent messages, for if it sees a ciphertext C, the message is 1n if C = C1</p>
+      <p>and 0n if C ̸= C1.</p>
+      <p>In a secure encryption scheme, it should not be possible to relate ciphertexts of diﬀerent messages</p>
+      <p>of the same length in such a way that information is leaked.</p>
+      <p>Not allowing message-equalities to be leaked has a dramatic implication. Namely, encryption</p>
+      <p>must be probabilistic or depend on state information. If not, you can always tell if the same message</p>
+      <p>was sent twice. Each encryption must use fresh coin tosses, or, say, a counter, and an encryption of</p>
+      <p>a particular message may be diﬀerent each time. In terms of our setup it means E is a probabilistic</p>
+      <p>or stateful algorithm. That’s why we deﬁned symmetric encryption schemes, above, to allow these</p>
+      <p>types of algorithms.</p>
+      <p>The reason this is dramatic is that it goes in many ways against the historical or popular</p>
+      <p>notion of encryption. Encryption was once thought of as a code, a ﬁxed mapping of plaintexts</p>
+      <p>to ciphertexts. But this is not the contemporary viewpoint. A single plaintext should have many</p>
+      <p>possible ciphertexts (depending on the random choices or the state of the encryption algorithm).</p>
+      <p>Yet it must be possible to decrypt. How is this possible? We have seen several examples above.</p>
+      <p>One formalization of privacy is what is called perfect security, an information-theoretic notion</p>
+      <p>introduced by Shannon and showed by him to be met by the one-time pad scheme, and covered in</p>
+      <p>Chapter 2. Perfect security asks that regardless of the computing power available to the adversary,</p>
+      <p>the ciphertext provides it no information about the plaintext beyond the a priori information it had</p>
+      <p>prior to seeing the ciphertext. Perfect security is a very strong attribute, but achieving it requires a</p>
+      <p>key as long as the total amount of data encrypted, and this is not usually practical. So here we look</p>
+      <p>at a notion of computational security. The security will only hold with respect to adversaries of</p>
+      <p>102</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>limited computing power. If the adversary works harder, she can ﬁgure out more, but a “feasible”</p>
+      <p>amount of eﬀort yields no noticeable information. This is the important notion for us and will be</p>
+      <p>used to analyze the security of schemes such as those presented above.</p>
+    </sec>
+    <sec>
+      <title>5.4</title>
+      <p>Indistinguishability under chosen-plaintext attack</p>
+      <p>Having discussed the issues in Section 5.3 above, we will now distill a formal deﬁnition of security.</p>
+    </sec>
+    <sec>
+      <title>5.4.1</title>
+      <p>Deﬁnition</p>
+      <p>The basic idea behind indistinguishability (or, more fully, left-or-right indistinguishability under</p>
+      <p>a chosen-plaintext attack) is to consider an adversary (not in possession of the secret key) who</p>
+      <p>chooses two messages of the same length. Then one of the two messages is encrypted, and the</p>
+      <p>ciphertext is given to the adversary. The scheme is considered secure if the adversary has a hard</p>
+      <p>time telling which of the two messages was the one encrypted.</p>
+      <p>We will actually give the adversary a little more power, letting her choose a whole sequence of</p>
+      <p>pairs of equal-length messages. Let us now detail the game.</p>
+      <p>The adversary chooses a sequence of pairs of messages, (M0,1, M1,1), . . . , (M0,q, M1,q), where,</p>
+      <p>in each pair, the two messages have the same length. We give to the adversary a sequence of</p>
+      <p>ciphertexts C1, . . . , Cq where either (1) Ci is an encryption of M0,i for all 1 ≤i ≤q or, (2) Ci is</p>
+      <p>an encryption of M1,i for all 1 ≤i ≤q. In doing the encryptions, the encryption algorithm uses</p>
+      <p>the same key but fresh coins, or an updated state, each time. The adversary gets the sequence of</p>
+      <p>ciphertexts and now it must guess whether M0,1, . . . , M0,q were encrypted or M1,1, . . . , M1,q were</p>
+      <p>encrypted.</p>
+      <p>To further empower the adversary, we let it choose the sequence of message pairs via a chosen</p>
+      <p>plaintext attack.</p>
+      <p>This means that the adversary chooses the ﬁrst pair, then receives C1, then</p>
+      <p>chooses the second pair, receives C2, and so on. (Sometimes this is called an adaptive chosen-</p>
+      <p>plaintext attack, because the adversary can adaptively choose each query in a way responsive to</p>
+      <p>the earlier answers.)</p>
+      <p>Let us now formalize this. We ﬁx some encryption scheme SE = (K, E, D). It could be either</p>
+      <p>stateless or stateful. We consider an adversary A. It is a program which has access to an oracle to</p>
+      <p>which it can provide as input any pair of equal-length messages. The oracle will return a ciphertext.</p>
+      <p>We will consider two possible ways in which this ciphertext is computed by the oracle, corresponding</p>
+      <p>to two possible “worlds” in which the adversary “lives”. To do this, ﬁrst deﬁne the left-or-right</p>
+      <p>encryption oracle (abbreviated lr-encryption oracle) EK(LR(·, ·, b)) as shown in Fig. 5.6. The oracle</p>
+      <p>encrypts one of the messages, the choice of which being made according to the bit b. Now the two</p>
+      <p>worlds are as follows:</p>
+      <p>World 0: The oracle provided to the adversary is EK(LR(·, ·, 0)). So, whenever the adversary</p>
+      <p>makes a query (M0, M1) with |M0| = |M1|, the oracle computes C</p>
+      <p>$←EK(M0), and returns C as</p>
+      <p>the answer.</p>
+      <p>World 1: The oracle provided to the adversary is EK(LR(·, ·, 1)). So, whenever the adversary</p>
+      <p>makes a query (M0, M1) with |M0| = |M1| to its oracle, the oracle computes C</p>
+      <p>$←EK(M1), and</p>
+      <p>returns C as the answer.</p>
+      <p>We also call the ﬁrst world (or oracle) the “left” world (or oracle), and the second world (or oracle)</p>
+      <p>the “right” world (or oracle). The problem for the adversary is, after talking to its oracle for some</p>
+      <p>Bellare and Rogaway</p>
+      <p>103</p>
+      <p>Oracle EK(LR(M0, M1, b))</p>
+      <p>// b ∈{0, 1} and M0, M1 ∈{0, 1}∗</p>
+      <p>if |M0| ̸= |M1| then return ⊥</p>
+      <p>C</p>
+      <p>$←EK(Mb)</p>
+      <p>return C</p>
+      <p>Figure 5.6: Left-or-right (lor) encryption oracle used to deﬁne IND-CPA security of encryption</p>
+      <p>scheme SE = (K, E, D).</p>
+      <p>time, to tell which of the two oracles it was given. Before we pin this down, let us further clarify</p>
+      <p>exactly how the oracle operates.</p>
+      <p>Think of the oracle as a subroutine to which A has access. Adversary A can make an oracle</p>
+      <p>query (M0, M1) by calling the subroutine with arguments (M0, M1). In one step, the answer is</p>
+      <p>then returned. Adversary A has no control on how the answer is computed, nor can A see the</p>
+      <p>inner workings of the subroutine, which will typically depend on secret information that A is not</p>
+      <p>provided. Adversary A has only an interface to the subroutine—the ability to call it as a black-box,</p>
+      <p>and get back an answer.</p>
+      <p>First assume the given symmetric encryption scheme SE is stateless.</p>
+      <p>The oracle, in either</p>
+      <p>world, is probabilistic, because it calls the encryption algorithm.</p>
+      <p>Recall that this algorithm is</p>
+      <p>probabilistic. Above, when we say C</p>
+      <p>$←EK(Mb), it is implicit that the oracle picks its own random</p>
+      <p>coins and uses them to compute ciphertext C.</p>
+      <p>The random choices of the encryption function are somewhat “under the rug” here, not being</p>
+      <p>explicitly represented in the notation. But these random bits should not be forgotten. They are</p>
+      <p>central to the meaningfulness of the notion and the security of the schemes.</p>
+      <p>If the given symmetric encryption scheme SE is stateful, the oracles, in either world, become</p>
+      <p>stateful, too. (Think of a subroutine that maintains a “static” variable across successive calls.)</p>
+      <p>An oracle begins with a state value initialized to a value speciﬁed by the encryption scheme. For</p>
+      <p>example, in CTRC mode, the state is an integer ctr that is initialized to 0. Now, each time the</p>
+      <p>oracle is invoked, it computes EK(Mb) according to the speciﬁcation of algorithm E. The algorithm</p>
+      <p>may, as a side-eﬀect, update the state, and upon the next invocation of the oracle, the new state</p>
+      <p>value will be used.</p>
+      <p>The following deﬁnition associates to a symmetric encryption scheme SE and an adversary A a</p>
+      <p>pair of experiments, one capturing each of the worlds described above. The adversary’s advantage,</p>
+      <p>which measures its success in breaking the scheme, is the diﬀerence in probabilities of the two</p>
+      <p>experiments returning the bit one.</p>
+      <p>Deﬁnition 5.8 Let SE = (K, E, D) be a symmetric encryption scheme, and let A be an algorithm</p>
+      <p>that has access to an oracle. We consider the following experiments:</p>
+      <p>Experiment Expind-cpa-1</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>K</p>
+      <p>$←K</p>
+      <p>d</p>
+      <p>$←AEK(LR(·,·,1))</p>
+      <p>Return d</p>
+      <p>Experiment Expind-cpa-0</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>K</p>
+      <p>$←K</p>
+      <p>d</p>
+      <p>$←AEK(LR(·,·,0))</p>
+      <p>Return d</p>
+      <p>The oracle used above is speciﬁed in Fig. 5.6. The IND-CPA advantage of A is deﬁned as</p>
+      <p>Advind-cpa</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>=</p>
+      <p>Pr</p>
+      <p>Expind-cpa-1</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>−Pr</p>
+      <p>Expind-cpa-0</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>.</p>
+      <p>104</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>As the above indicates, the choice of which world we are in is made just once, at the beginning,</p>
+      <p>before the adversary starts to interact with the oracle. In world 0, all message pairs sent to the</p>
+      <p>oracle are answered by the oracle encrypting the left message in the pair, while in world 1, all</p>
+      <p>message pairs are answered by the oracle encrypting the right message in the pair. The choice of</p>
+      <p>which does not ﬂip-ﬂop from oracle query to oracle query.</p>
+      <p>If Advind-cpa</p>
+      <p>SE</p>
+      <p>(A) is small (meaning close to zero), it means that A is outputting 1 about as often</p>
+      <p>in world 0 as in world 1, meaning it is not doing a good job of telling which world it is in. If this</p>
+      <p>quantity is large (meaning close to one—or at least far from zero) then the adversary A is doing</p>
+      <p>well, meaning our scheme SE is not secure, at least to the extent that we regard A as “reasonable.”</p>
+      <p>Informally, for symmetric encryption scheme SE to be secure against chosen plaintext attack,</p>
+      <p>the IND-CPA advantage of an adversary must be small, no matter what strategy the adversary</p>
+      <p>tries. However, we have to be realistic in our expectations, understanding that the advantage may</p>
+      <p>grow as the adversary invests more eﬀort in its attack. Security is a measure of how large the</p>
+      <p>advantage of the adversary might when compared against the adversary’s resources.</p>
+      <p>We consider an encryption scheme to be “secure against chosen-plaintext attack” if an adversary</p>
+      <p>restricted to using “practical” amount of resources (computing time, number of queries) cannot</p>
+      <p>obtain “signiﬁcant” advantage. The technical notion is called left-or-right indistinguishability under</p>
+      <p>chosen-plaintext attack, denoted IND-CPA.</p>
+      <p>We discuss some important conventions regarding the resources of adversary A. The running</p>
+      <p>time of an adversary A is the worst case execution time of A over all possible coins of A and all</p>
+      <p>conceivable oracle return values (including return values that could never arise in the experiments</p>
+      <p>used to deﬁne the advantage). Oracle queries are understood to return a value in unit time, but</p>
+      <p>it takes the adversary one unit of time to read any bit that it chooses to read. By convention, the</p>
+      <p>running time of A also includes the size of the code of the adversary A, in some ﬁxed RAM model</p>
+      <p>of computation. This convention for measuring time complexity is the same as used in other parts</p>
+      <p>of these notes, for all kinds of adversaries.</p>
+      <p>Other resource conventions are speciﬁc to the IND-CPA notion. When the adversary asks its</p>
+      <p>left-or-right encryption oracle a query (M0, M1) we say that length of this query is max(|M0|, |M1|).</p>
+      <p>(This will equal |M0| for any reasonable adversary since an oracle query with messages of diﬀerent</p>
+      <p>lengths results in the adversary being returned ⊥, so we can assume no reasonable adversary makes</p>
+      <p>such a query.) The total length of queries is the sum of the length of each query. We can measure</p>
+      <p>query lengths in bits or in blocks, with block having some understood number of bits n.</p>
+      <p>The resources of the adversary we will typically care about are three. First, its time-complexity,</p>
+      <p>measured according to the convention above. Second, the number of oracle queries, meaning the</p>
+      <p>number of message pairs the adversary asks of its oracle. These messages may have diﬀerent lengths,</p>
+      <p>and our third resource measure is the sum of all these lengths, denoted µ, again measured according</p>
+      <p>to the convention above.</p>
+    </sec>
+    <sec>
+      <title>5.4.2</title>
+      <p>Alternative interpretation</p>
+      <p>Let us move on to describe a somewhat diﬀerent interpretation of left-or-right indistinguishability.</p>
+      <p>Why is Advind-cpa</p>
+      <p>SE</p>
+      <p>(A) called the “advantage” of the adversary?</p>
+      <p>We can view the task of the</p>
+      <p>adversary as trying to guess which world it is in. A trivial guess is for the adversary to return a</p>
+      <p>random bit. In that case, it has probability 1/2 of being right. Clearly, it has not done anything</p>
+      <p>damaging in this case. The advantage of the adversary measures how much better than this it</p>
+      <p>does at guessing which world it is in, namely the excess over 1/2 of the adversary’s probability</p>
+      <p>Bellare and Rogaway</p>
+      <p>105</p>
+      <p>of guessing correctly. In this subsection we will see how the above deﬁnition corresponds to this</p>
+      <p>alternative view, a view that lends some extra intuition to the deﬁnition and is also useful in later</p>
+      <p>usages of the deﬁnition.</p>
+      <p>Proposition 5.9 Let SE = (K, E, D) be a symmetric encryption scheme, and let A be an algorithm</p>
+      <p>that has access to an oracle that takes input a pair of strings and returns a string. We consider the</p>
+      <p>following experiment:</p>
+      <p>Experiment Expind-cpa-cg</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>b</p>
+      <p>$←{0, 1} ; K</p>
+      <p>$←K</p>
+      <p>b′</p>
+      <p>$←AEK(LR(·,·,b))</p>
+      <p>if b = b′ then return 1 else return 0</p>
+      <p>Then</p>
+      <p>Advind-cpa</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>=</p>
+      <p>2 · Pr</p>
+      <p>Expind-cpa-cg</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>−1 .</p>
+      <p>In the above experiment, adversary A is run with an oracle for world b, where the bit b is chosen</p>
+      <p>at random. A eventually outputs a bit b′, its guess as to the value of b. The experiment returns 1</p>
+      <p>if A’s guess is correct. Thus,</p>
+      <p>Pr</p>
+      <p>Expind-cpa-cg</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>is the probability that A correctly guesses which world it is in. (The “cg” in the superscript naming</p>
+      <p>the experiment stands for “correct guess.”) The probability is over the initial choice of world as</p>
+      <p>given by the bit b, the choice of K, the random choices of EK(·) if any, and the coins of A if any.</p>
+      <p>This value is 1/2 when the adversary deserves no advantage, since one can guess b correctly by a</p>
+      <p>strategy as simple as “always answer zero” or “answer with a random bit.” The “advantage” of A</p>
+      <p>can thus be viewed as the excess of this probability over 1/2, which, re-scaled, is</p>
+      <p>2 · Pr</p>
+      <p>Expind-cpa-cg</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>−1 .</p>
+      <p>The Proposition says that this rescaled advantage is exactly the same measure as before.</p>
+      <p>Proof of Proposition 5.9:</p>
+      <p>We let Pr [·] be the probability of event “·” in the experiment</p>
+      <p>Expind-cpa-cg</p>
+      <p>SE</p>
+      <p>(A), and refer below to quantities in this experiment. The claim of the Proposition</p>
+      <p>follows by a straightforward calculation:</p>
+      <p>Pr</p>
+      <p>Expind-cpa-cg</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>Pr</p>
+      <p>b = b′</p>
+      <p>=</p>
+      <p>Pr</p>
+      <p>b = b′ | b = 1</p>
+      <p> · Pr [b = 1] + Pr</p>
+      <p>b = b′ | b = 0</p>
+      <p> · Pr [b = 0]</p>
+      <p>=</p>
+      <p>Pr</p>
+      <p>b = b′ | b = 1</p>
+      <p> · 1</p>
+      <p>2 + Pr</p>
+      <p>b = b′ | b = 0</p>
+      <p> · 1</p>
+      <p>2</p>
+      <p>=</p>
+      <p>Pr</p>
+      <p>b′ = 1 | b = 1</p>
+      <p> · 1</p>
+      <p>2 + Pr</p>
+      <p>b′ = 0 | b = 0</p>
+      <p> · 1</p>
+      <p>2</p>
+      <p>=</p>
+      <p>Pr</p>
+      <p>b′ = 1 | b = 1</p>
+      <p> · 1</p>
+      <p>2 +</p>
+      <p>1 −Pr</p>
+      <p>b′ = 1 | b = 0</p>
+      <p> · 1</p>
+      <p>2</p>
+      <p>=</p>
+      <p>1</p>
+      <p>2 + 1</p>
+      <p>2 ·</p>
+      <p>Pr</p>
+      <p>b′ = 1 | b = 1</p>
+      <p> −Pr</p>
+      <p>b′ = 1 | b = 0</p>
+      <p></p>
+      <p>106</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>=</p>
+      <p>1</p>
+      <p>2 + 1</p>
+      <p>2 ·</p>
+      <p></p>
+      <p>Pr</p>
+      <p>Expind-cpa-1</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>−Pr</p>
+      <p>Expind-cpa-0</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>1</p>
+      <p>2 + 1</p>
+      <p>2 · Advind-cpa</p>
+      <p>SE</p>
+      <p>(A) .</p>
+      <p>We began by expanding the quantity of interest via standard conditioning. The term of 1/2 in the</p>
+      <p>third line emerged because the choice of b is made at random. In the fourth line we noted that if we</p>
+      <p>are asking whether b = b′ given that we know b = 1, it is the same as asking whether b′ = 1 given b =</p>
+      <p>1, and analogously for b = 0. In the ﬁfth line and sixth lines we just manipulated the probabilities</p>
+      <p>and simpliﬁed. The next line is important; here we observed that the conditional probabilities in</p>
+      <p>question are exactly the probabilities that A returns 1 in the experiments of Deﬁnition 5.8.</p>
+    </sec>
+    <sec>
+      <title>5.4.3</title>
+      <p>Why is this a good deﬁnition?</p>
+      <p>Our thesis is that we should consider an encryption scheme to be “secure” if and only if it is IND-</p>
+      <p>CPA secure, meaning that the above formalization captures our intuitive sense of privacy, and the</p>
+      <p>security requirements that one might put on an encryption scheme can be boiled down to this one.</p>
+      <p>But why? Why does IND-CPA capture “privacy”? This is an important question to address</p>
+      <p>and answer.</p>
+      <p>In particular, here is one concern. In Section 5.3 we noted a number of security properties that</p>
+      <p>are necessary but not suﬃcient for security. For example, it should be computationally infeasible</p>
+      <p>for an adversary to recover the key from a few plaintext-ciphertext pairs, or to recover a plaintext</p>
+      <p>from a ciphertext.</p>
+      <p>A test of our deﬁnition is that it implies the necessary properties that we have discussed, and</p>
+      <p>others. For example, a scheme that is secure in the IND-CPA sense of our deﬁnition should also be,</p>
+      <p>automatically, secure against key-recovery or plaintext-recovery. Later, we will prove such things,</p>
+      <p>and even stronger things. For now, let us continue to get a better sense of how to work with the</p>
+      <p>deﬁnition by using it to show that certain schemes are insecure.</p>
+    </sec>
+    <sec>
+      <title>5.5</title>
+      <p>Example chosen-plaintext attacks</p>
+      <p>We illustrate the use of our IND-CPA deﬁnition in ﬁnding attacks by providing an attack on ECB</p>
+      <p>mode, and also a general attack on deterministic, stateless schemes.</p>
+    </sec>
+    <sec>
+      <title>5.5.1</title>
+      <p>Attack on ECB</p>
+      <p>Let us ﬁx a blockcipher E: K × {0, 1}n →{0, 1}n.</p>
+      <p>The ECB symmetric encryption scheme</p>
+      <p>SE = (K, E, D) was described as Scheme 5.3. Suppose an adversary sees a ciphertext C = EK(M)</p>
+      <p>corresponding to some random plaintext M, encrypted under the key K also unknown to the ad-</p>
+      <p>versary. Can the adversary recover M? Not easily, if E is a “good” blockcipher. For example if E</p>
+      <p>is AES, it seems quite infeasible. Yet, we have already discussed how infeasibility of recovering</p>
+      <p>plaintext from ciphertext is not an indication of security. ECB has other weaknesses. Notice that if</p>
+      <p>two plaintexts M and M′ agree in the ﬁrst block, then so do the corresponding ciphertexts. So an</p>
+      <p>adversary, given the ciphertexts, can tell whether or not the ﬁrst blocks of the corresponding plain-</p>
+      <p>texts are the same. This is loss of partial information about the plaintexts, and is not permissible</p>
+      <p>in a secure encryption scheme.</p>
+      <p>Bellare and Rogaway</p>
+      <p>107</p>
+      <p>It is a test of our deﬁnition to see that it captures these weaknesses and also ﬁnds the scheme</p>
+      <p>insecure. It does. To show this, we want to show that there is an adversary that has a high IND-</p>
+      <p>CPA advantage while using a small amount of resources. We now construct such an adversary A.</p>
+      <p>Remember that A is given a lr-encryption oracle EK(LR(·, ·, b)) that takes as input a pair of messages</p>
+      <p>and that returns an encryption of either the left or the right message in the pair, depending on the</p>
+      <p>value of the bit b. The goal of A is to determine the value of b. Our adversary works like this:</p>
+      <p>Adversary AEK(LR(·,·,b))</p>
+      <p>M1 ←02n ; M0 ←0n ∥1n</p>
+      <p>C[1]C[2] ←EK(LR(M0, M1, b))</p>
+      <p>If C[1] = C[2] then return 1 else return 0</p>
+      <p>Above, X[i] denotes the i-th block of a string X, a block being a sequence of n bits. The adversary’s</p>
+      <p>single oracle query is the pair of messages M0, M1. Since each of them is two blocks long, so is the</p>
+      <p>ciphertext computed according to the ECB scheme. Now, we claim that</p>
+      <p>Pr</p>
+      <p>Expind-cpa-1</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>1 and</p>
+      <p>Pr</p>
+      <p>Expind-cpa-0</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>0 .</p>
+      <p>Why? You have to return to the deﬁnitions of the quantities in question, and trace through the ex-</p>
+      <p>periments deﬁned there. In world 1, meaning b = 1, the oracle returns C[1]C[2] = EK(0n)∥EK(0n),</p>
+      <p>so C[1] = C[2] and A returns 1.</p>
+      <p>In world 0, meaning b = 0, the oracle returns C[1]C[2] =</p>
+      <p>EK(0n)EK(1n). Since EK is a permutation, C[1] ̸= C[2]. So A returns 0 in this case.</p>
+      <p>Subtracting, we get Advind-cpa</p>
+      <p>SE</p>
+      <p>(A) = 1 −0 = 1. And A achieved this advantage by making just</p>
+      <p>one oracle query, whose length, which as per our conventions is just the length of M0, is 2n bits.</p>
+      <p>This means that the ECB encryption scheme is insecure.</p>
+      <p>As an exercise, try to analyze the same adversary as an adversary against CBC$ or CTR modes,</p>
+      <p>and convince yourself that the adversary will not get a high advantage.</p>
+      <p>There is an important feature of this attack that must be emphasized. Namely, ECB is an</p>
+      <p>insecure encryption scheme even if the underlying blockcipher E is highly secure. The weakness is</p>
+      <p>not in the tool being used (here the blockcipher) but in the manner we are using it. It is the ECB</p>
+      <p>mechanism that is at fault. Even the best of tools are useless if you don’t know how to properly</p>
+      <p>use them.</p>
+      <p>This is the kind of design ﬂaw that we want to be able to spot and eradicate. Our goal is to</p>
+      <p>ﬁnd symmetric encryption schemes that are secure as long as the underlying blockcipher is secure.</p>
+      <p>In other words, the scheme has no inherent ﬂaw; as long as you use good ingredients, the recipe</p>
+      <p>will produce a good meal.</p>
+      <p>If you don’t use good ingredients? Well, that is your problem. All bets are oﬀ.</p>
+    </sec>
+    <sec>
+      <title>5.5.2</title>
+      <p>Any deterministic, stateless schemes is insecure</p>
+      <p>ECB mode is deterministic and stateless, so that if the same message is encrypted twice, the same</p>
+      <p>ciphertext is returned. It turns out that this property, in general, results in an insecure scheme,</p>
+      <p>and provides perhaps a better understanding of why ECB fails. Let us state the general fact more</p>
+      <p>precisely.</p>
+      <p>108</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>Proposition 5.10 Let SE = (K, E, D) be a deterministic, stateless symmetric encryption scheme.</p>
+      <p>Assume there is an integer m such that the plaintext space of the scheme contains two distinct</p>
+      <p>strings of length m. Then there is an adversary A such that</p>
+      <p>Advind-cpa</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>=</p>
+      <p>1 .</p>
+      <p>Adversary A runs in time O(m) and asks just two queries, each of length m.</p>
+      <p>The requirement being made on the message space is minimal; typical schemes have messages spaces</p>
+      <p>containing all strings of lengths between some minimum and maximum length, possibly restricted</p>
+      <p>to strings of some given multiples. Note that this Proposition applies to ECB and is enough to</p>
+      <p>show the latter is insecure.</p>
+      <p>Proof of Proposition 5.10: We must describe the adversary A. Remember that A is given an lr-</p>
+      <p>encryption oracle f = EK(LR(·, ·, b)) that takes input a pair of messages and returns an encryption</p>
+      <p>of either the left or the right message in the pair, depending on the value of b. The goal of A is to</p>
+      <p>determine the value of b. Our adversary works like this:</p>
+      <p>Adversary Af</p>
+      <p>Let X, Y be distinct, m-bit strings in the plaintext space</p>
+      <p>C1 ←EK(LR(X, Y, b))</p>
+      <p>C2 ←EK(LR(Y, Y, b))</p>
+      <p>If C1 = C2 then return 1 else return 0</p>
+      <p>Now, we claim that</p>
+      <p>Pr</p>
+      <p>Expind-cpa-1</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>1 and</p>
+      <p>Pr</p>
+      <p>Expind-cpa-0</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>0 .</p>
+      <p>Why? In world 1, meaning b = 1, the oracle returns C1 = EK(Y ) and C2 = EK(Y ), and since the</p>
+      <p>encryption function is deterministic and stateless, C1 = C2, so A returns 1. In world 0, meaning</p>
+      <p>b = 0, the oracle returns C1 = EK(X) and C2 = EK(Y ), and since it is required that decryption be</p>
+      <p>able to recover the message, it must be that C1 ̸= C2. So A returns 0.</p>
+      <p>Subtracting, we get Advind-cpa</p>
+      <p>SE</p>
+      <p>(A) = 1 −0 = 1. And A achieved this advantage by making two</p>
+      <p>oracle queries, each of whose length, which as per our conventions is just the length of the ﬁrst</p>
+      <p>message, is m bits.</p>
+    </sec>
+    <sec>
+      <title>5.5.3</title>
+      <p>Attack on CBC encryption with counter IV</p>
+      <p>Let us ﬁx a blockcipher E: K × {0, 1}n →{0, 1}n.</p>
+      <p>Let SE = (K, E, D) be the corresponding</p>
+      <p>counter-based version of the CBC encryption mode described in Scheme 5.5. We show that this</p>
+      <p>scheme is insecure. The reason is that the adversary can predict the counter value.</p>
+      <p>To justify our claim of insecurity, we present an adversary A. As usual it is given an lr-encryption</p>
+      <p>oracle EK(LR(·, ·, b)) and wants to determine b. Our adversary works like this:</p>
+      <p>Adversary AEK(LR(·,·,b))</p>
+      <p>M0,1 ←0n ; M1,1 ←0n</p>
+      <p>Bellare and Rogaway</p>
+      <p>109</p>
+      <p>M0,2 ←0n ; M1,2 ←0n−11</p>
+      <p>⟨IV1, C1⟩</p>
+      <p>$←EK(LR(M0,1, M1,1, b))</p>
+      <p>⟨IV2, C2⟩</p>
+      <p>$←EK(LR(M0,2, M1,2, b))</p>
+      <p>If C1 = C2 then return 1 else return 0</p>
+      <p>We claim that</p>
+      <p>Pr</p>
+      <p>Expind-cpa-1</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>1 and</p>
+      <p>Pr</p>
+      <p>Expind-cpa-0</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>0 .</p>
+      <p>Why? First consider the case b = 0, meaning we are in world 0. In that case IV1 = 0 and IV2 = 1</p>
+      <p>and C1 = EK(0) and C2 = EK(1) and so C1 ̸= C2 and the deﬁned experiment returns 0. On the</p>
+      <p>other hand, if b = 1, meaning we are in world 1, then IV1 = 0 and IV21 = 1 and C1 = EK(0) and</p>
+      <p>C2 = EK(0), so the deﬁned experiment returns 1.</p>
+      <p>Subtracting, we get Advind-cpa</p>
+      <p>SE</p>
+      <p>(A) = 1 −0 = 1, showing that A has a very high advantage.</p>
+      <p>Moreover, A is practical, using very few resources. So the scheme is insecure.</p>
+    </sec>
+    <sec>
+      <title>5.6</title>
+      <p>Semantic security</p>
+      <p>In this section we describe an alternative notion of encryption-scheme security, semantic security,</p>
+      <p>again under a chosen-plaintext attack. We will abbreviate this notion as SEM-CPA. It captures</p>
+      <p>the idea that a secure encryption scheme should hide all information about an unknown plaintext.</p>
+      <p>This deﬁnition may match our intuition about what secure encryption ought to achieve better than</p>
+      <p>does IND-CPA. We then show that IND-CPA implies SEM-CPA. (In fact, they are equivalent.)</p>
+      <p>By showing that our IND-CPA notion implies SEM-CPA we gain conﬁdence that our deﬁnition</p>
+      <p>appropriately models privacy.</p>
+      <p>Semantic security, which was introduced by Goldwasser and Micali for public-key encryption,</p>
+      <p>transfers the intuition of Shannon’s notion of security to a setting where security is not absolute</p>
+      <p>but dependent on the computational eﬀort made by an adversary. Shannon says that an encryp-</p>
+      <p>tion scheme is secure if that which can be determined about a plaintext from its ciphertext can be</p>
+      <p>determined in the absence of the ciphertext. Semantic security asks that that which can be eﬃ-</p>
+      <p>ciently computed about some plaintexts from their ciphertexts can be computed, just as easily, in</p>
+      <p>the absence of those ciphertexts.</p>
+      <p>Our formalization allows an adversary to choose a message space M from which messages may</p>
+      <p>be drawn, and to specify a function f on messages. Messages M and M′ are drawn independently</p>
+      <p>and at random from the message space M. We consider two worlds. In the ﬁrst, the adversary will</p>
+      <p>attempt to compute f(M) given an encryption of M. In the second, the adversary will attempt to</p>
+      <p>compute f(M) given an encryption of M′ (that is, the adversary is given no information related to</p>
+      <p>M). The scheme is secure if it succeeds about as often in the second game as the ﬁrst, no matter</p>
+      <p>what (reasonable) f and M the adversary selects.</p>
+      <p>To make our deﬁnition as general as possible, we will actually let the adversary choose, in</p>
+      <p>sequence, message spaces M1, . . . , Mq. From each message space Mi draw the message Mi at</p>
+      <p>random, and then let Ci be a random encryption of Mi.</p>
+      <p>Adaptively querying, the adversary</p>
+      <p>obtains the vector of ciphertexts (C1, . . . , Cq). Now the adversary tries to ﬁnd a function f such</p>
+      <p>that it can do a good job at predicting f(M1, . . . , Mq). Doing a good job means predicting this value</p>
+      <p>signiﬁcantly better than how well the adversary would predict it had it been given no information</p>
+      <p>110</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>about M1, . . . , Mq: each Ci was not the encryption of Mi but the encryption of a random point M′</p>
+      <p>i</p>
+      <p>from Mi. The formal deﬁnition now follows.</p>
+      <p>Deﬁnition 5.11 [Semantic security] Let SE = (K, E, D) be a symmetric encryption scheme,</p>
+      <p>and let A be an algorithm that has access to an oracle. We consider the following experiments:</p>
+      <p>Experiment Expss-cpa-1</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>K</p>
+      <p>$←K, s</p>
+      <p>$←ε</p>
+      <p>for i ←1 to q do</p>
+      <p>(Mi, s)</p>
+      <p>$←A(s)</p>
+      <p>Mi, M′</p>
+      <p>i</p>
+      <p>$←Mi</p>
+      <p>if |Mi| ̸= |M′</p>
+      <p>i| then Mi ←M′</p>
+      <p>i ←ε</p>
+      <p>Ci</p>
+      <p>$←EK(Mi),</p>
+      <p>s ←⟨s, Ci⟩</p>
+      <p>(f, Y )</p>
+      <p>$←A(s)</p>
+      <p>return f(M1, . . . , Mq) = Y</p>
+      <p>Experiment Expss-cpa-0</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>K</p>
+      <p>$←K, s</p>
+      <p>$←ε</p>
+      <p>for i ←1 to q do</p>
+      <p>(Mi, s)</p>
+      <p>$←A(s)</p>
+      <p>Mi, M′</p>
+      <p>i</p>
+      <p>$←Mi</p>
+      <p>if |Mi| ̸= |M′</p>
+      <p>i| then Mi ←M′</p>
+      <p>i ←ε</p>
+      <p>Ci</p>
+      <p>$←EK(M′</p>
+      <p>i),</p>
+      <p>s ←⟨s, Ci⟩</p>
+      <p>(f, Y )</p>
+      <p>$←A(s)</p>
+      <p>return f(M1, . . . , Mq) = Y</p>
+      <p>The SEM-CPA advantage of A is deﬁned as</p>
+      <p>Advsem-cpa</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>=</p>
+      <p>Pr</p>
+      <p>Expss-cpa-1</p>
+      <p>SE</p>
+      <p>(A)⇒1</p>
+      <p></p>
+      <p>−Pr</p>
+      <p>Expss-cpa-0</p>
+      <p>SE</p>
+      <p>(A)⇒1</p>
+      <p></p>
+      <p>.</p>
+      <p>In the deﬁnition above, each experiment initializes its oracle by choosing a random key K.</p>
+      <p>A total of q times, the adversary chooses a message space Mi. The message space is speciﬁed</p>
+      <p>by an always-halting probabilistic algorithm, written in some ﬁxed programming language. The</p>
+      <p>code for this algorithm is what the adversary actually outputs. Each time the message space is</p>
+      <p>output, two random samples are drawn from this message space, Mi and M′</p>
+      <p>i. We expect that Mi</p>
+      <p>and M′</p>
+      <p>i to have the same length, and if they don’t we “erase” both strings. The encryption of</p>
+      <p>one of these messages will be returned to the adversary. Which string gets encrypted depends on</p>
+      <p>the experiment: Mi for experiment 1 and M′</p>
+      <p>i for experiment 0. By f we denote a deterministic</p>
+      <p>function. It is described by an always-halting program and, as before, it actually the program for f</p>
+      <p>that the adversary outputs. By Y we denote a string. The string s represents saved state that the</p>
+      <p>adversary may wish to retain.</p>
+      <p>In speaking of the running time of A, we include, beyond the actual running time, the maximal</p>
+      <p>time to draw two samples from each message space M that A outputs, and we include the maximal</p>
+      <p>time to compute f(M1, . . . , Mq) over any vector of strings. In speaking of the length of A’s queries</p>
+      <p>we sum, over all the message spaces output by A, the maximal length of a string M output with</p>
+      <p>nonzero probability by M, and we sum also over the lengths of the encodings of each messages</p>
+      <p>space, function f, and string Y output by A.</p>
+      <p>We emphasize that the above would seem to be an exceptionally strong notion of security. We</p>
+      <p>have given the adversary the ability to choose the message spaces from which each message will be</p>
+      <p>drawn. We have let the adversary choose the partial information about the messages that it ﬁnds</p>
+      <p>convenient to predict. We have let the adversary be fully adaptive. We have built in the ability to</p>
+      <p>perform a chosen-message attack (simply by producing an algorithm M that samples one and only</p>
+      <p>one point). Despite all this, we now show that security in the indistinguishability sense implies</p>
+      <p>semantic security.</p>
+      <p>Theorem 5.12 [IND-CPA ⇒SEM-CPA] Let SE = (K, E, D) be a symmetric encryption</p>
+      <p>scheme and let A be an adversary (for attacking the SEM-CPA security of SE) that runs in time</p>
+      <p>Bellare and Rogaway</p>
+      <p>111</p>
+      <p>at most t and asks at most q queries, these queries totaling at most µ bits. Then there exists and</p>
+      <p>adversary B (for attacking the IND-CPA security of SE) that achieves advantage</p>
+      <p>Advind-cpa</p>
+      <p>SE</p>
+      <p>(B)</p>
+      <p>≥</p>
+      <p>Advsem-cpa</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>and where B runs in time t + O(µ) and asks at most q queries, these queries totaling µ bits.</p>
+      <p>Proof: The adversary B, which has oracle g, is constructed as follows.</p>
+      <p>algorithm Bg</p>
+      <p>s</p>
+      <p>$←ε</p>
+      <p>for i ←1 to q do</p>
+      <p>(Mi, s)</p>
+      <p>$←A(s)</p>
+      <p>Mi, M′i</p>
+      <p>$←Mi</p>
+      <p>if |Mi| ̸= |M′</p>
+      <p>i| then Mi ←M′</p>
+      <p>i ←ε</p>
+      <p>Ci ←g(M′</p>
+      <p>i, Mi), s ←⟨s, Ci⟩</p>
+      <p>(f, Y )</p>
+      <p>$←A(s)</p>
+      <p>if f(M1, . . . , Mq) = Y then return 1 else return 0</p>
+      <p>Suppose ﬁrst that g is instantiated by a right encryption oracle—an oracle that returns C</p>
+      <p>$←EK(M)</p>
+      <p>in response to a query (M′, M). Then the algorithm above coincides with experiment Expss-cpa-1</p>
+      <p>SE</p>
+      <p>(A).</p>
+      <p>Similarly, if g is instantiated by a left encryption oracle—the oracle it returns C</p>
+      <p>$←EK(M′) in re-</p>
+      <p>sponse to a query (M′, M)—then the algorithm above coincides with experiment Expss-cpa-0</p>
+      <p>SE</p>
+      <p>(A).</p>
+      <p>It follows that Advsem-cpa</p>
+      <p>SE</p>
+      <p>(B) = Advind-cpa</p>
+      <p>SE</p>
+      <p>(A). To complete the theorem, note that B’s running</p>
+      <p>time is A’s running time plus O(µ) and B asks a total of q queries, these having total length at</p>
+      <p>most the total length of A’s queries, under our convention.</p>
+    </sec>
+    <sec>
+      <title>5.7</title>
+      <p>Security of CTR modes</p>
+      <p>Recall that the CTR (counter) mode of operation of a family of functions comes in two variants: the</p>
+      <p>randomized (stateless) version CTRC of Scheme 5.6, and the counter-based (stateful) mechanism</p>
+      <p>CTR$ of Scheme 5.7. Both modes achieve indistinguishability under a chosen-plaintext attack,</p>
+      <p>but, interestingly, the quantitative security is a little diﬀerent. The diﬀerence springs from the fact</p>
+      <p>that CTRC achieves perfect indistinguishability if one uses the random function family Func(n) in</p>
+      <p>the role of the underlying family of functions F—but CTR$ would not achieve perfect indistin-</p>
+      <p>guishability even then, because of the possibility that collisions would produce “overlaps” in the</p>
+      <p>pseudo-one-time pad.</p>
+      <p>We will state the main theorems about the schemes, discuss them, and then prove them. For</p>
+      <p>the counter version we have:</p>
+      <p>Theorem 5.13 [Security of CTRC mode] Let F: K×{0, 1}n →{0, 1}n be a family of functions</p>
+      <p>and let SE = (K, E, D) be the corresponding CTRC symmetric encryption scheme as described in</p>
+      <p>Scheme 5.7. Let A be an adversary (for attacking the IND-CPA security of SE) that runs in time</p>
+      <p>at most t and asks at most q queries, these totaling at most σ n-bit blocks. Then there exists an</p>
+      <p>adversary B (attacking the PRF security of F) such that</p>
+      <p>Advind-cpa</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>≤</p>
+      <p>Advprf</p>
+      <p>F (B) .</p>
+      <p>112</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>Furthermore B runs in time at most t′ = t + O(q + nσ) and asks at most q′ = σ oracle queries.</p>
+      <p>Theorem 5.14 [Security of CTR$ mode] Let F: K × {0, 1}n →{0, 1}n be a blockcipher</p>
+      <p>and let SE = (K, E, D) be the corresponding CTR$ symmetric encryption scheme as described in</p>
+      <p>Scheme 5.6. Let A be an adversary (for attacking the IND-CPA security of SE) that runs in time</p>
+      <p>at most t and asks at most q queries, these totaling at most σ n-bit blocks. Then there exists an</p>
+      <p>adversary B (attacking the PRF security of F) such that</p>
+      <p>Advind-cpa</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>≤</p>
+      <p>Advprf</p>
+      <p>F (B) + 0.5 σ2</p>
+      <p>2n</p>
+      <p>.</p>
+      <p>Furthermore B runs in time at most t′ = t + O(q + nσ) and asks at most q′ = σ oracle queries.</p>
+      <p>The above theorems exemplify the kinds of results that the provable-security approach is about.</p>
+      <p>Namely, we are able to provide provable guarantees of security of some higher level cryptographic</p>
+      <p>construct (in this case, a symmetric encryption scheme) based on the assumption that some building</p>
+      <p>block (in this case an underlying block) is secure. The above results are the ﬁrst example of the</p>
+      <p>“punch-line” we have been building towards. So it is worth pausing at this point and trying to</p>
+      <p>make sure we really understand what these theorems are saying and what are their implications.</p>
+      <p>If we want to entrust our data to some encryption mechanism, we want to know that this</p>
+      <p>encryption mechanism really provides privacy. If it is ill-designed, it may not. We saw this happen</p>
+      <p>with ECB. Even if we used a secure blockcipher, the ﬂaws of ECB mode make it an insecure</p>
+      <p>encryption scheme.</p>
+      <p>Flaws are not apparent in CTR at ﬁrst glance. But maybe they exist. It is very hard to see how</p>
+      <p>one can be convinced they do not exist, when one cannot possible exhaust the space of all possible</p>
+      <p>attacks that could be tried. Yet this is exactly the diﬃculty that the above theorems circumvent.</p>
+      <p>They are saying that CTR mode does not have design ﬂaws. They are saying that as long as you use</p>
+      <p>a good blockcipher, you are assured that nobody will break your encryption scheme. One cannot</p>
+      <p>ask for more, since if one does not use a good blockcipher, there is no reason to expect security of</p>
+      <p>your encryption scheme anyway. We are thus getting a conviction that all attacks fail even though</p>
+      <p>we do not even know exactly how these attacks might operate. That is the power of the approach.</p>
+      <p>Now, one might appreciate that the ability to make such a powerful statement takes work. It</p>
+      <p>is for this that we have put so much work and time into developing the deﬁnitions: the formal</p>
+      <p>notions of security that make such results meaningful. For readers who have less experience with</p>
+      <p>deﬁnitions, it is worth knowing, at least, that the eﬀort is worth it. It takes time and work to</p>
+      <p>understand the notions, but the payoﬀs are big: you get signiﬁcant guarantees of security.</p>
+      <p>How, exactly, are the theorems saying this? The above discussion has pushed under the rug</p>
+      <p>the quantitative aspect that is an important part of the results. It may help to look at a concrete</p>
+      <p>example.</p>
+      <p>Example 5.15 Let us suppose that F is the blockcipher AES, so that n = 128. Suppose I want</p>
+      <p>to encrypt q = 230 messages, each being one kilobyte (213 bits) long. I am thus encrypting a total</p>
+      <p>of 243 bits, which is to say σ = 236 blocks. (This is about one terabyte). Can I do this securely</p>
+      <p>using CTR$? Let A be an adversary attacking the privacy of my encryption. Theorem 5.14 says</p>
+      <p>that there exists a B satisfying the stated conditions. How large can Advprf</p>
+      <p>AES(B) be? It makes</p>
+      <p>q = 236 queries, and it is consistent with our state of knowledge of the security of AES to assume</p>
+      <p>that such an adversary cannot do better than mount a birthday attack, meaning its advantage is</p>
+      <p>Bellare and Rogaway</p>
+      <p>113</p>
+      <p>algorithm Eg(M)</p>
+      <p>static ctr ←0</p>
+      <p>m ←⌈|M|/L⌉</p>
+      <p>If ctr + m −1 ≥2n then return ⊥</p>
+      <p>Pad ←g(ctr) ∥g(ctr + 1) ∥· · · ∥g(ctr + m −1)</p>
+      <p>Pad ←the ﬁrst |M| bits of Pad</p>
+      <p>C ←M ⊕Pad</p>
+      <p>ctr ←ctr + m</p>
+      <p>return ⟨ctr −m, C⟩</p>
+      <p>algorithm Dg(⟨i, C⟩)</p>
+      <p>m ←⌈|C|/L⌉</p>
+      <p>if i + m −1 ≥2n then return ⊥</p>
+      <p>Pad ←g(i) ∥g(i + 1) ∥· · · ∥g(i + m −1)</p>
+      <p>Pad ←the ﬁrst |C| bits of Pad</p>
+      <p>M ←Pad ⊕C</p>
+      <p>return M</p>
+      <p>Figure 5.7: Version SE[G] = (K, E, D) of the CTRC scheme parameterized by a family of func-</p>
+      <p>tions G.</p>
+      <p>no more than q2/2128. Under such an assumption, the theorem tells us that Advrnd-cpa</p>
+      <p>SE</p>
+      <p>(A) is at</p>
+      <p>most σ2/2128 + 0.5 σ2/2128 = 1.5 272/2128 ≤1/255. This is a very small number indeed, saying that</p>
+      <p>our encryption is secure, at least under the assumption that the best attack on the PRF security of</p>
+      <p>AES is a birthday attack. Note however that if we encrypt 264 blocks of data, our provable-security</p>
+      <p>bound becomes meaningless.</p>
+      <p>The example illustrates how to use the theorems to ﬁgure out how much security you will get from</p>
+      <p>the CTR encryption scheme in a given application.</p>
+      <p>Note that as per the above theorems, encrypting more than σ = 2n/2 blocks of data with CTR$</p>
+      <p>is not secure regardless of the quality of F as a PRF. On the other hand, with CTRC, it might be</p>
+      <p>secure, as long as F can withstand σ queries. This is an interesting and possibly useful distinction.</p>
+      <p>Yet, in the setting in which such modes are usually employed, the distinction all but vanishes.</p>
+      <p>For usually F is a blockcipher and in that case, we know from the birthday attack that the prf-</p>
+      <p>advantage of B may itself be as large as Θ(σ2/2n), and thus, again, encrypting more than σ = 2n/2</p>
+      <p>blocks of data is not secure. However, we might be able to ﬁnd or build function families F that</p>
+      <p>are not families of permutations and preserve PRF security against adversaries making more than</p>
+      <p>2n/2 queries.</p>
+    </sec>
+    <sec>
+      <title>5.7.1</title>
+      <p>Proof of Theorem 5.13</p>
+      <p>The paradigm used is quite general in many of its aspects, and we will use it again, not only for</p>
+      <p>encryption schemes, but for other kinds of schemes that are based on pseudorandom functions.</p>
+      <p>An important observation regarding the CTR scheme is that the encryption and decryption</p>
+      <p>operations do not need direct access to the key K, but only access to a subroutine, or oracle,</p>
+      <p>114</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>that implements the function FK.</p>
+      <p>This is important because one can consider what happens</p>
+      <p>when FK is replaced by some other function. To consider such replacements, we reformulate the</p>
+      <p>scheme. We introduce a scheme that takes as a parameter any given family of functions G having</p>
+      <p>domain {0, 1}n and range {0, 1}n.</p>
+      <p>As we will see later the cases of interest are G = F and</p>
+      <p>G = Func(n,n). Let us ﬁrst however describe this parameterized scheme. In the rest of this proof,</p>
+      <p>SE[G] = (K, E, D) denotes the symmetric encryption scheme deﬁned as follows. The key generation</p>
+      <p>algorithm simply returns a random instance of G, meaning that it picks a function g</p>
+      <p>$←G from</p>
+      <p>family G at random, and views g as the key. The encryption and decryption algorithms are shown</p>
+      <p>in Fig. 5.7. (The scheme is stateful, with the encryptor maintaining a counter that is initially zero).</p>
+      <p>As the description indicates, the scheme is exactly CTRC, except that function g is used in place</p>
+      <p>of FK. This seemingly cosmetic change of viewpoint is quite useful, as we will see.</p>
+      <p>We observe that the scheme in which we are interested, and which the theorem is about, is</p>
+      <p>simply SE[F] where F is our given family of functions as per the theorem. Now, the proof breaks</p>
+      <p>into two parts. The ﬁrst step removes F from the picture, and looks instead at an “idealized”</p>
+      <p>version of the scheme. Namely we consider the scheme SE[Func(n,n)]. Here, a random function</p>
+      <p>g of n-bits to n-bits is being used where the original scheme would use FK. We then assess an</p>
+      <p>adversary’s chance of breaking this idealized scheme. We argue that this chance is actually zero.</p>
+      <p>This is the main lemma in the analysis.</p>
+      <p>This step is deﬁnitely a thought experiment. No real implementation can use a random function</p>
+      <p>in place of FK because even storing such a function takes an exorbitant amount of memory. But</p>
+      <p>this analysis of the idealized scheme enables us to focus on any possible weaknesses of the CTR</p>
+      <p>mode itself, as opposed to weaknesses arising from properties of the underlying blockcipher. We</p>
+      <p>can show that this idealized scheme is secure, and that means that the mode itself is good.</p>
+      <p>It then remains to see how this “lifts” to a real world, in which we have no ideal random</p>
+      <p>functions, but rather want to assess the security of the scheme SE[F] that uses the given family F.</p>
+      <p>Here we exploit the notion of pseudorandomness to say that the chance of an adversary breaking the</p>
+      <p>SE[F] can diﬀer from its chance of breaking the ideal-world scheme SE[Func(n,n)] by an amount</p>
+      <p>not exceeding the probability of breaking the pseudorandomness of F using comparable resources.</p>
+      <p>Lemma 5.16 [Security of CTRC using a random function] Let A be any IND-CPA adver-</p>
+      <p>sary attacking SE[Func(n,n)], where the scheme is depicted in Fig. 5.7. Then</p>
+      <p>Advind-cpa</p>
+      <p>SE[Func(n,n)](A)</p>
+      <p>=</p>
+      <p>0 .</p>
+      <p>The lemma considers an arbitrary adversary. Let us say this adversary has time-complexity t, makes</p>
+      <p>q queries to its lr-encryption oracle, these totaling σ n-bit blocks. The lemma does not care about</p>
+      <p>the values of t, q, or σ. (Recall, however, that after encrypting a total of 2n blocks, the encryption</p>
+      <p>mechanism will “shut up” and be of no use.) It says the adversary has zero advantage, meaning</p>
+      <p>no chance at all of breaking the scheme. The fact that no restriction is made on t indicates that</p>
+      <p>the result is information-theoretic: it holds regardless of how much computing time the adversary</p>
+      <p>invests.</p>
+      <p>Of course, this lemma refers to the idealized scheme, namely the one where the function g</p>
+      <p>being used by the encryption algorithm is random. But remember that ECB was insecure even in</p>
+      <p>this setting. (The attacks we provided for ECB work even if the underlying cipher E is Perm(n),</p>
+      <p>the family of all permutations on n-bit strings.) So the statement is not content-free; it is saying</p>
+      <p>something quite meaningful and important about the CTR mode. It is not true of all modes.</p>
+      <p>Bellare and Rogaway</p>
+      <p>115</p>
+      <p>We postpone the proof of the lemma. Instead we will ﬁrst see how to use it to conclude the</p>
+      <p>proof of the theorem. The argument here is quite simple and generic.</p>
+      <p>The lemma tells us that the CTRC encryption scheme is (very!) secure when g is a random</p>
+      <p>function. But we are interested in the case where g is is an instance of our given family F. So our</p>
+      <p>worry is that the actual scheme SE[F] is insecure even though the idealized scheme SE[Func(n,n)]</p>
+      <p>is secure.</p>
+      <p>In other words, we worry that there might be an adversary having large IND-CPA</p>
+      <p>advantage in attacking SE[F], even though we know that its advantage in attacking SE[Func(n,n)]</p>
+      <p>is zero. But we claim that this is not possible if F is a secure PRF. Intuitively, the existence of</p>
+      <p>such an adversary indicates that F is not approximating Func(n,n) since there is some detectable</p>
+      <p>event, namely the success probability of some adversary in a certain experiment, that happens with</p>
+      <p>high probability when F is used and with low probability when Func(n,n) is used. To concretize</p>
+      <p>this intuition, let A be a IND-CPA adversary attacking SE[F]. We associate to A an adversary</p>
+      <p>B that is given oracle access to a function g: {0, 1}n →{0, 1}n and is trying to determine which</p>
+      <p>world it is in, where in world 0 the function g is a random instance of Func(n,n) and in world 1 the</p>
+      <p>function g is a random instance of F. We suggest the following strategy to the adversary. It runs</p>
+      <p>A, and replies to A’s oracle queries in such a way that A is attacking SE[Func(n,n)] in B’s world 0,</p>
+      <p>and A is attacking SE[F] in B’s world 1. The reason it is possible for B to do this is that it can</p>
+      <p>execute the encryption algorithm Eg(·) of Fig. 5.7, which simply requires access to the function g.</p>
+      <p>If the adversary A wins, meaning it correctly identiﬁes the encryption oracle, B bets that g is an</p>
+      <p>instance of F; otherwise, B bets that g is an instance of Func(n,n).</p>
+      <p>We stress the key point that makes this argument work. It is that the encryption function of</p>
+      <p>the CTRC scheme invokes the function FK purely as an oracle. If it had, instead, made some direct</p>
+      <p>use of the key K, the paradigm above would not work. The full proof follows.</p>
+      <p>Proof of Theorem 5.13:</p>
+      <p>Let A be any IND-CPA adversary attacking SE = (K, E, D). Assume</p>
+      <p>A makes q oracle queries totaling µ bits, and has time-complexity t. There there is an adversary</p>
+      <p>B such that</p>
+      <p>Advind-cpa</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>≤</p>
+      <p>2 · Advprf</p>
+      <p>F (B) .</p>
+      <p>(5.1)</p>
+      <p>Furthermore, B will make σ oracle queries and have time-complexity that of A plus O(q + nσ).</p>
+      <p>Now, the statement of Theorem 5.13 follows.</p>
+      <p>Remember that B takes an oracle g: {0, 1}n →{0, 1}n. This oracle is either drawn at random</p>
+      <p>from F or from Func(n,n) and B does not know which. To ﬁnd out, B will use A, running it as</p>
+      <p>a subroutine. But remember that A too gets an oracle, namely an lr-encryption oracle. From A’s</p>
+      <p>point of view, this oracle is simply a subroutine: A can write, at some location, a pair of messages,</p>
+      <p>and is returned a response by some entity it calls its oracle. When B runs A as a subroutine, it is</p>
+      <p>B that will “simulate” the lr-encryption oracle for A, meaning B will provide the responses to any</p>
+      <p>oracle queries that A makes. Here is the description of B:</p>
+      <p>Adversary Bg</p>
+      <p>b</p>
+      <p>$←{0, 1}</p>
+      <p>Run adversary A, replying to its oracle queries as follows</p>
+      <p>When A makes an oracle query (M0, M1) do</p>
+      <p>C</p>
+      <p>$←Eg(Mb)</p>
+      <p>Return C to A as the answer</p>
+      <p>116</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>Until A stops and outputs a bit b′</p>
+      <p>If b′ = b then return 1 else return 0</p>
+      <p>Here Eg(·) denotes the encryption function of the generalized CTRC scheme that we deﬁned in</p>
+      <p>Fig. 5.7. The crucial fact we are exploiting here is that this function can be implemented given an</p>
+      <p>oracle for g. Adversary B itself picks the challenge bit b representing the choice of worlds for A,</p>
+      <p>and then sees whether or not A succeeds in guessing the value of this bit. If it does, it bets that g</p>
+      <p>is an instance of F, and otherwise it bets that g is an instance of Func(n,n). For the analysis, we</p>
+      <p>claim that</p>
+      <p>Pr</p>
+      <p>Expprf-1</p>
+      <p>F</p>
+      <p>(B) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>1</p>
+      <p>2 + 1</p>
+      <p>2 · Advind-cpa</p>
+      <p>SE[F] (A)</p>
+      <p>(5.2)</p>
+      <p>Pr</p>
+      <p>Expprf-0</p>
+      <p>F</p>
+      <p>(B) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>1</p>
+      <p>2 + 1</p>
+      <p>2 · Advind-cpa</p>
+      <p>SE[Func(n,n)](A) .</p>
+      <p>(5.3)</p>
+      <p>We will justify these claims shortly, but ﬁrst let us use them to conclude. Subtracting, we get</p>
+      <p>Advprf</p>
+      <p>F (B)</p>
+      <p>=</p>
+      <p>Pr</p>
+      <p>Expprf-1</p>
+      <p>F</p>
+      <p>(B) = 1</p>
+      <p></p>
+      <p>−Pr</p>
+      <p>Expprf-0</p>
+      <p>F</p>
+      <p>(B) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>1</p>
+      <p>2 · Advind-cpa</p>
+      <p>SE[F] (A) −1</p>
+      <p>2 · Advind-cpa</p>
+      <p>SE[Func(n,n)](A)</p>
+      <p>(5.4)</p>
+      <p>=</p>
+      <p>1</p>
+      <p>2 · Advind-cpa</p>
+      <p>SE[F] (A) .</p>
+      <p>The last inequality is from Lemma 5.16, which tells us that the term Advind-cpa</p>
+      <p>SE[Func(n,n)](A) is zero.</p>
+      <p>Re-arranging terms gives us Equation (5.1). Now let us check the resource usage. Each computation</p>
+      <p>Eg(Mb) requires |Mb|/n applications of g, and hence the total number of queries made by B to its</p>
+      <p>oracle g is σ. The time-complexity of B equals that of A plus the overhead for answering the oracle</p>
+      <p>queries. It remains to justify Equations (5.2) and (5.3).</p>
+      <p>Adversary B returns 1 when b = b′, meaning that IND-CPA adversary A correctly identiﬁed the</p>
+      <p>world b in which it was placed, or, in the language of Section 5.4.2, made the “correct guess.” The</p>
+      <p>role played by B’s world is simply to alter the encryption scheme for which this is true. When B is</p>
+      <p>in world 1, the encryption scheme, from the point of view of A, is SE[F], and when B is in world 0,</p>
+      <p>the encryption scheme, from the point of view of A, is SE[Func(n,n)]. Thus, using the notation</p>
+      <p>from Section 5.4.2, we have</p>
+      <p>Pr</p>
+      <p>Expprf-1</p>
+      <p>F</p>
+      <p>(B) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>Pr</p>
+      <p>Expind-cpa-cg</p>
+      <p>SE[F]</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>Pr</p>
+      <p>Expprf-0</p>
+      <p>F</p>
+      <p>(B) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>Pr</p>
+      <p>Expind-cpa-cg</p>
+      <p>SE[Func(n,n)](A) = 1</p>
+      <p></p>
+      <p>.</p>
+      <p>To obtain Equations (5.2) and (5.3) we can now apply Proposition 5.9.</p>
+      <p>For someone unused to PRF-based proofs of security the above may seem complex, but the under-</p>
+      <p>lying idea is actually very simple, and will be seen over and over again. It is simply that one can</p>
+      <p>view the experiment of the IND-CPA adversary attacking the encryption scheme as information</p>
+      <p>about the underlying function g being used, and if the adversary has more success in the case that</p>
+      <p>g is an instance of F than that g is an instance of Func(n,n), then we have a distinguishing test</p>
+      <p>Bellare and Rogaway</p>
+      <p>117</p>
+      <p>between F and Func(n,n). Let us now prove the lemma about the security of the idealized CTRC</p>
+      <p>scheme.</p>
+      <p>Proof of Lemma 5.16:</p>
+      <p>The intuition is simple. When g is a random function, its value on</p>
+      <p>successive counter values yields a one-time pad, a truly random and unpredictable sequence of bits.</p>
+      <p>As long as the number of data bits encrypted does not exceed n2n, we invoke g only on distinct</p>
+      <p>values in the entire encryption process. And if an encryption would result in more queries than</p>
+      <p>this, the algorithm simply shuts up, so we can ignore this. The outputs of g are thus random. Since</p>
+      <p>the data is XORed to this sequence, the adversary gets no information whatsoever about it.</p>
+      <p>Now, we must make sure that this intuition carries through in our setting. Our lemma statement</p>
+      <p>makes reference to our notions of security, so we must use the setup in Section 5.4. The adversary</p>
+      <p>A has access to an lr-encryption oracle. Since the scheme we are considering is SE[Func(n,n)], the</p>
+      <p>oracle is Eg(LR(·, ·, b)), where the function Eg was deﬁned in Fig. 5.7, and g is a random instance</p>
+      <p>of Func(n,n), meaning a random function.</p>
+      <p>The adversary makes some number q of oracle queries. Let (Mi,0, Mi,1) be the i-th query, and let mi</p>
+      <p>be the number of blocks in Mi,0. (We can assume this is the same as the number of blocks in Mi,1,</p>
+      <p>since otherwise the lr-encryption oracle returns ⊥). Let Mi,c[j] be the value of the j-th n-bit block</p>
+      <p>of Mi,b for b ∈{0, 1}. Let C′</p>
+      <p>i be the response returned by the oracle to query (Mi,0, Mi,1). It consists</p>
+      <p>of a value that encodes the counter value, together with mi blocks of n bits each, Ci[1] . . . Ci[mi].</p>
+      <p>Pictorially:</p>
+      <p>M1,b</p>
+      <p>=</p>
+      <p>M1,b[1]M1,b[1] . . . M1,b[m1]</p>
+      <p>C1</p>
+      <p>=</p>
+      <p>⟨0, C1[1] · · · C1[m1]⟩</p>
+      <p>M2,b</p>
+      <p>=</p>
+      <p>M2,b[1]M2,b[2] . . . M2,b[m2]</p>
+      <p>C2</p>
+      <p>=</p>
+      <p>⟨m1, C2[1] · · · C2[m2]⟩</p>
+      <p>...</p>
+      <p>...</p>
+      <p>Mq,b</p>
+      <p>=</p>
+      <p>Mq,b[1]Mq,b[2] . . . Mq,b[mq]</p>
+      <p>Cq</p>
+      <p>=</p>
+      <p>⟨m1 + · · · + mq−1, Cq[1] · · · Cq[mq]⟩</p>
+      <p>What kind of distribution do the outputs received by A have? We claim that the m1 + · · · + mq</p>
+      <p>values Ci[j] (i = 1, . . . , q and j = 1, . . . , mi) are randomly and independently distributed, not only</p>
+      <p>of each other, but of the queried messages and the bit b, and moreover this is true in both worlds.</p>
+      <p>Why? Here is where we use a crucial property of the CTR mode, namely that it XORs data with</p>
+      <p>the value of g on a counter. We observe that according to the scheme</p>
+      <p>Ci[j]</p>
+      <p>=</p>
+      <p>g([m1 + · · · + mi−1 + j]l) ⊕</p>
+      <p></p>
+      <p>Mi,1[j]</p>
+      <p>if we are in world 1</p>
+      <p>Mi,0[j]</p>
+      <p>if we are in world 0.</p>
+      <p>Now, we can ﬁnally see that the idea we started with is really the heart of it. The values on which</p>
+      <p>g is being applied above are all distinct. So the outputs of g are all random and independent. It</p>
+      <p>matters not, then, what we XOR these outputs with; what comes back is just random.</p>
+      <p>This tells us that any given output sequence from the oracle is equally likely in both worlds. Since</p>
+      <p>the adversary determines its output bit based on this output sequence, its probability of returning 1</p>
+      <p>must be the same in both worlds,</p>
+      <p>Pr</p>
+      <p>Expind-cpa-1</p>
+      <p>SE[Func(n,n)](A) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>Pr</p>
+      <p>Expind-cpa-0</p>
+      <p>SE[Func(n,n)](A) = 1</p>
+      <p></p>
+      <p>.</p>
+      <p>118</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>algorithm Eg(M)</p>
+      <p>m ←⌈|M|/n⌉</p>
+      <p>R</p>
+      <p>$←{0, 1}n</p>
+      <p>Pad ←g(R + 0) ∥g(R + 1) ∥· · · ∥g(R + m −1)</p>
+      <p>Pad ←the ﬁrst |M| bits of Pad</p>
+      <p>C′ ←M ⊕Pad</p>
+      <p>C ←R ∥C′</p>
+      <p>return C</p>
+      <p>algorithm Dg(⟨i, C′⟩)</p>
+      <p>m ←⌈|C′|/n⌉</p>
+      <p>Pad ←g(R) ∥g(R + 1) ∥· · · ∥g(R + m −1)</p>
+      <p>Pad ←the ﬁrst |C′| bits of Pad</p>
+      <p>M ←C′ ⊕Pad</p>
+      <p>return M</p>
+      <p>Figure 5.8: Version SE[G] = (K, E, D) of the CTR$ scheme parameterized by a family of func-</p>
+      <p>tions G.</p>
+      <p>Hence A’s IND-CPA advantage is zero.</p>
+    </sec>
+    <sec>
+      <title>5.7.2</title>
+      <p>Proof of Theorem 5.14</p>
+      <p>The proof of Theorem 5.14 re-uses a lot of what we did for the proof of Theorem 5.13 above. We ﬁrst</p>
+      <p>look at the scheme when g is a random function, and then use the pseudorandomness of the given</p>
+      <p>family F to deduce the theorem. As before we associate to a family of functions G having domain</p>
+      <p>{0, 1}n and range {0, 1}n a parameterized version of the CTR$ scheme, SE[G] = (K, E, D). The</p>
+      <p>key generation algorithm simply returns a random instance of G, meaning picks a function g</p>
+      <p>$←G</p>
+      <p>from family G at random, and views g as the key, and the encryption and decryption algorithms</p>
+      <p>are shown in Fig. 5.8. Here is the main lemma.</p>
+      <p>Lemma 5.17 [Security of CTR$ using a random function] Let A be any IND-CPA adversary</p>
+      <p>attacking SE[Func(n,n)], where the scheme is depicted in Fig. 5.8. Then</p>
+      <p>Advind-cpa</p>
+      <p>SE[Func(n,n)](A)</p>
+      <p>≤</p>
+      <p>0.5 σ2</p>
+      <p>2n</p>
+      <p>,</p>
+      <p>assuming A asks a number of queries whose total length is at most σ n-bit blocks.</p>
+      <p>The proof of Theorem 5.14 given this lemma is easy at this point because it is almost identical</p>
+      <p>to the above proof of Theorem 5.13, and it is the subject of Problem 5.6.</p>
+      <p>We go on to prove</p>
+      <p>Lemma 5.17.</p>
+      <p>Before we prove Lemma 5.17, we will analyze a certain probabilistic game. The problem we</p>
+      <p>isolate here is purely probabilistic; it has nothing to do with encryption or even cryptography.</p>
+      <p>Bellare and Rogaway</p>
+      <p>119</p>
+      <p>Lemma 5.18 Let n, q be positive integers, and let m1, . . . , mq &lt; 2n also be positive integers.</p>
+      <p>Suppose we pick q integers r1, . . . , rq from [0..2n −1] uniformly and independently at random. We</p>
+      <p>consider the following m1 + · · · + mq numbers:</p>
+      <p>r1,</p>
+      <p>r1 + 1,</p>
+      <p>· · · ,</p>
+      <p>r1 + m1 −1</p>
+      <p>r2,</p>
+      <p>r2 + 1,</p>
+      <p>· · · ,</p>
+      <p>r2 + m2 −1</p>
+      <p>...</p>
+      <p>...</p>
+      <p>rq,</p>
+      <p>rq + 1,</p>
+      <p>· · · ,</p>
+      <p>rq + mq −1 ,</p>
+      <p>where the addition is performed modulo 2n. We say that a collision occurs if some two (or more)</p>
+      <p>numbers in the above table are equal. Then</p>
+      <p>Pr [Col]</p>
+      <p>≤</p>
+      <p>(q −1)(m1 + · · · + mq)</p>
+      <p>2n</p>
+      <p>,</p>
+      <p>(5.5)</p>
+      <p>where Col denotes the event that a collision occurs.</p>
+      <p>Proof of Lemma 5.18:</p>
+      <p>As with many of the probabilistic settings that arise in this area, this</p>
+      <p>is a question about some kind of “balls thrown in bins” setting, related to the birthday problem</p>
+      <p>studied in the appendix on the birthday problem. Indeed a reader may ﬁnd it helpful to study that</p>
+      <p>appendix ﬁrst.</p>
+      <p>Think of having 2n bins, numbered 0, 1, . . . , 2n −1. We have q balls, numbered 1, . . . , q. For each</p>
+      <p>ball we choose a random bin which we call ri. We choose the bins one by one, so that we ﬁrst</p>
+      <p>choose r1, then r2, and so on. When we have thrown in the ﬁrst ball, we have deﬁned the ﬁrst</p>
+      <p>row of the above table, namely the values r1, r1 + 1, . . . , r1 + m1 −1. Then we pick the assignment</p>
+      <p>r2 of the bin for the second ball. This deﬁnes the second row of the table, namely the values</p>
+      <p>r2, r2 +1, . . . , r2 +m2 −1. A collision occurs if any value in the second row equals some value in the</p>
+      <p>ﬁrst row. We continue, up to the q-th ball, each time deﬁning a row of the table, and are ﬁnally</p>
+      <p>interested in the probability that a collision occurred somewhere in the process. To upper bound</p>
+      <p>this, we want to write this probability in such a way that we can do the analysis step by step,</p>
+      <p>meaning view it in terms of having thrown, and ﬁxed, some number of balls, and seeing whether</p>
+      <p>there is a collision when we throw in one more ball. To this end let Coli denote the event that there</p>
+      <p>is a collision somewhere in the ﬁrst i rows of the table, for i = 1, . . . , q. Let NoColi denote the event</p>
+      <p>that there is no collision in the ﬁrst i rows of the table, for i = 1, . . . , q. Then by conditioning we</p>
+      <p>have</p>
+      <p>Pr [Col]</p>
+      <p>=</p>
+      <p>Pr [Colq]</p>
+      <p>=</p>
+      <p>Pr [Colq−1] + Pr [Colq | NoColq−1] · Pr [NoColq−1]</p>
+      <p>≤</p>
+      <p>Pr [Colq−1] + Pr [Colq | NoColq−1]</p>
+      <p>≤</p>
+      <p>...</p>
+      <p>≤</p>
+      <p>Pr [Col1] +</p>
+      <p>q</p>
+      <p></p>
+      <p>i=2</p>
+      <p>Pr [Coli | NoColi−1]</p>
+      <p>=</p>
+      <p>q</p>
+      <p></p>
+      <p>i=2</p>
+      <p>Pr [Coli | NoColi−1] .</p>
+      <p>120</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>Thus we need to upper bound the chance of a collision upon throwing the i-th ball, given that there</p>
+      <p>was no collision created by the ﬁrst i −1 balls. Then we can sum up the quantities obtained and</p>
+      <p>obtain our bound.</p>
+      <p>We claim that for any i = 2, . . . , q we have</p>
+      <p>Pr [Coli | NoColi−1]</p>
+      <p>≤</p>
+      <p>(i −1)mi + mi−1 + · · · + m1</p>
+      <p>2n</p>
+      <p>.</p>
+      <p>(5.6)</p>
+      <p>Let us ﬁrst see why this proves the lemma and then return to justify it. From the above and</p>
+      <p>Equation (5.6) we have</p>
+      <p>Pr [Col]</p>
+      <p>≤</p>
+      <p>q</p>
+      <p></p>
+      <p>i=2</p>
+      <p>Pr [Coli | NoColi−1]</p>
+      <p>≤</p>
+      <p>q</p>
+      <p></p>
+      <p>i=2</p>
+      <p>(i −1)mi + mi−1 + · · · + m1</p>
+      <p>2n</p>
+      <p>=</p>
+      <p>(q −1)(m1 + · · · + mq)</p>
+      <p>2n</p>
+      <p>.</p>
+      <p>How did we do the last sum? The term mi occurs with weight i −1 in the i-th term of the sum,</p>
+      <p>and then with weight 1 in the j-th term of the sum for j = i + 1, . . . , q. So its total weight is</p>
+      <p>(i −1) + (q −i) = q −1.</p>
+      <p>It remains to prove Equation (5.6). To get some intuition about it, begin with the cases i = 1, 2.</p>
+      <p>When we throw in the ﬁrst ball, the chance of a collision is zero, since there is no previous row with</p>
+      <p>which to collide, so that is simple. When we throw in the second, what is the chance of a collision?</p>
+      <p>The question is, what is the probability that one of the numbers r2 + 1, . . . , r2 + m2 deﬁned by the</p>
+      <p>second ball is equal to one of the numbers r1 + 1, . . . , r1 + m1 already in the table? View r1 as</p>
+      <p>ﬁxed. Observe that a collision occurs if and only if r1 −m2 + 1 ≤r2 ≤r1 + m1 −1. So there are</p>
+      <p>(r1 + m1 −1) −(r1 −m2 + 1) + 1 = m1 + m2 −1 choices of r2 that could yield a collision. This</p>
+      <p>means that Pr [Col2 | NoCol1] ≤(m2 + m1 −1)/2n.</p>
+      <p>We need to extend this argument as we throw in more balls. So now suppose i −1 balls have been</p>
+      <p>thrown in, where 2 ≤i ≤q, and suppose there is no collision in the ﬁrst i−1 rows of the table. We</p>
+      <p>throw in the i-th ball, and want to know what is the probability that a collision occurs. We are</p>
+      <p>viewing the ﬁrst i −1 rows of the table as ﬁxed, so the question is just what is the probability that</p>
+      <p>one of the numbers deﬁned by ri equals one of the numbers in the ﬁrst i −1 rows of the table. A</p>
+      <p>little thought shows that the worst case (meaning the case where the probability is the largest) is</p>
+      <p>when the existing i −1 rows are well spread-out. We can upper bound the collision probability by</p>
+      <p>reasoning just as above, except that there are i −1 diﬀerent intervals to worry about rather than</p>
+      <p>just one. The i-th row can intersect with the ﬁrst row, or the second row, or the third, and so on,</p>
+      <p>up to the (i −1)-th row. So we get</p>
+      <p>Pr [Coli | NoColi−1]</p>
+      <p>≤</p>
+      <p>(mi + m1 −1) + (mi + m2 −1) + · · · + (mi + mi−1 −1)</p>
+      <p>2n</p>
+      <p>=</p>
+      <p>(i −1)mi + mi−1 + · · · + m1 −(i −1)</p>
+      <p>2n</p>
+      <p>,</p>
+      <p>and Equation (5.6) follows by just dropping the negative term in the above.</p>
+      <p>Bellare and Rogaway</p>
+      <p>121</p>
+      <p>Let us now extend the proof of Lemma 5.16 to prove Lemma 5.17.</p>
+      <p>Proof of Lemma 5.17:</p>
+      <p>Recall that the idea of the proof of Lemma 5.16 was that when g is a</p>
+      <p>random function, its value on successive counter values yields a one-time pad. This holds whenever</p>
+      <p>g is applied on some set of distinct values. In the counter case, the inputs to g are always distinct.</p>
+      <p>In the randomized case they may not be distinct. The approach is to consider the event that they</p>
+      <p>are distinct, and say that in that case the adversary has no advantage; and on the other hand,</p>
+      <p>while it may have a large advantage in the other case, that case does not happen often. We now</p>
+      <p>ﬂush all this out in more detail.</p>
+      <p>The adversary makes some number q of oracle queries. Let (Mi,0, Mi,1) be the i-th query, and let</p>
+      <p>mi be the number of blocks in Mi,0.(We can assume this is the same as the number of blocks in</p>
+      <p>Mi,1, since otherwise the lr-encryption oracle returns ⊥). Let Mi,b[j] be the value of the j-th n-bit</p>
+      <p>block of Mi,b for b ∈{0, 1}. Let C′</p>
+      <p>i be the response returned by the oracle to query (Mi,0, Mi,1). It</p>
+      <p>consists of the encoding of a number ri ∈[0..2n −1] and a mi-block message Ci = Ci[1] · · · Ci[mi].</p>
+      <p>Pictorially:</p>
+      <p>M1,b</p>
+      <p>=</p>
+      <p>M1,b[1]M1,b[1] . . . M1,b[m1]</p>
+      <p>C1</p>
+      <p>=</p>
+      <p>⟨r1, C1[1] · · · C1[m1]⟩</p>
+      <p>M2,b</p>
+      <p>=</p>
+      <p>M2,b[1]M2,b[2] · · · M2,b[m2]</p>
+      <p>C2</p>
+      <p>=</p>
+      <p>⟨r2, C2[1] . . . C2[m2]⟩</p>
+      <p>...</p>
+      <p>...</p>
+      <p>Mq,b</p>
+      <p>=</p>
+      <p>Mq,b[1]Mq,b[2] · · · Mq,b[mq]</p>
+      <p>Cq</p>
+      <p>=</p>
+      <p>⟨rq, Cq[1] . . . Cq[mq]⟩</p>
+      <p>Let NoCol be the event that the following m1 + · · · + mq values are all distinct:</p>
+      <p>r1,</p>
+      <p>r1 + 1,</p>
+      <p>· · · ,</p>
+      <p>r1 + m1 −1</p>
+      <p>r2,</p>
+      <p>r2 + 1,</p>
+      <p>· · · ,</p>
+      <p>r2 + m2 −1</p>
+      <p>...</p>
+      <p>...</p>
+      <p>rq,</p>
+      <p>rq + 1,</p>
+      <p>· · · ,</p>
+      <p>rq + mq −1</p>
+      <p>Let Col be the complement of the event NoCol, meaning the event that the above table contains at</p>
+      <p>least two values that are the same. It is useful for the analysis to introduce the following shorthand:</p>
+      <p>Pr0 [·]</p>
+      <p>=</p>
+      <p>The probability of event “·” in world 0</p>
+      <p>Pr0 [·]</p>
+      <p>=</p>
+      <p>The probability of event “·” in world 1 .</p>
+      <p>We will use the following three claims, which are proved later.</p>
+      <p>The ﬁrst claim says that the</p>
+      <p>probability of a collision in the above table does not depend on which world we are in.</p>
+      <p>122</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>Claim 1: Pr1 [Col] = Pr0 [Col]. 2</p>
+      <p>The second claim says that A has zero advantage in winning the left-or-right game in the case that</p>
+      <p>no collisions occur in the table. Namely, its probability of outputting one is identical in these two</p>
+      <p>worlds under the assumption that no collisions have occurred in the values in the table.</p>
+      <p>Claim 2: Pr0 [A = 1 | NoCol] = Pr1 [A = 1 | NoCol]. 2</p>
+      <p>We can say nothing about the advantage of A if a collision does occur in the table. It might be</p>
+      <p>big. However, it will suﬃce to know that the probability of a collision is small. Since we already</p>
+      <p>know that this probability is the same in both worlds (Claim 1) we bound it just in world 0:</p>
+      <p>Claim 3: Pr0 [Col] ≤σ2</p>
+      <p>2n . 2</p>
+      <p>Let us see how these put together complete the proof of the lemma, and then go back and prove</p>
+      <p>them.</p>
+      <p>Proof of Lemma given Claims: It is a simple conditioning argument:</p>
+      <p>Advind-cpa</p>
+      <p>SE[Func(n,n)](A)</p>
+      <p>=</p>
+      <p>Pr1 [A = 1] −Pr0 [A = 1]</p>
+      <p>=</p>
+      <p>Pr1 [A = 1 | Col] · Pr1 [Col] + Pr1 [A = 1 | NoCol] · Pr1 [NoCol]</p>
+      <p>−Pr0 [A = 1 | Col] · Pr0 [Col] −Pr0 [A = 1 | NoCol] · Pr0 [NoCol]</p>
+      <p>=</p>
+      <p>(Pr1 [A = 1 | Col] −Pr0 [A = 1 | Col]) · Pr0 [Col]</p>
+      <p>≤</p>
+      <p>Pr0 [Col] .</p>
+      <p>The second-last step used Claims 1 and 2. In the last step we simply upper bounded the parenthe-</p>
+      <p>sized expression by 1. Now apply Claim 3, and we are done. 2</p>
+      <p>It remains to prove the three claims.</p>
+      <p>Proof of Claim 1: The event NoCol depends only on the random values r1, . . . , rq chosen by the</p>
+      <p>encryption algorithm Eg(·). These choices, however, are made in exactly the same way in both</p>
+      <p>worlds. The diﬀerence in the two worlds is what message is encrypted, not how the random values</p>
+      <p>are chosen. 2</p>
+      <p>Proof of Claim 2: Given the event NoCol, we have that, in either game, the function g is evaluated</p>
+      <p>at a new point each time it is invoked. Thus the output is randomly and uniformly distributed over</p>
+      <p>{0, 1}L, independently of anything else. That means the reasoning from the counter-based scheme</p>
+      <p>as given in Lemma 5.16 applies. Namely, we observe that according to the scheme</p>
+      <p>Ci[j]</p>
+      <p>=</p>
+      <p>g(ri + j) ⊕</p>
+      <p></p>
+      <p>Mi,1[j]</p>
+      <p>if we are in world 1</p>
+      <p>Mi,0[j]</p>
+      <p>if we are in world 0.</p>
+      <p>Thus each cipher block is a message block XORed with a random value. A consequence of this is</p>
+      <p>that each cipher block has a distribution that is independent of any previous cipher blocks and of</p>
+      <p>the messages. 2</p>
+      <p>Proof of Claim 3: This follows from Lemma 5.18. We simply note that m1 + · · · + mq = σ. 2</p>
+      <p>This concludes the proof.</p>
+      <p>Bellare and Rogaway</p>
+      <p>123</p>
+      <p>algorithm Eg(M)</p>
+      <p>if (|M| mod n ̸= 0 or |M| = 0) then return ⊥</p>
+      <p>Break M into n-bit blocks M[1] · · · M[m]</p>
+      <p>C[0] ←IV</p>
+      <p>$←{0, 1}n</p>
+      <p>for i ←1 to m do</p>
+      <p>C[i] ←g(C[i −1] ⊕M[i])</p>
+      <p>C ←C[1] · · · C[m]</p>
+      <p>return ⟨IV, C⟩</p>
+      <p>algorithm Dg(⟨IV, C⟩)</p>
+      <p>return ⊥</p>
+      <p>Figure 5.9: Version SE[G] = (K, E, D) of the CBC$ scheme parameterized by a family of functions</p>
+      <p>G.</p>
+    </sec>
+    <sec>
+      <title>5.8</title>
+      <p>Security of CBC with a random IV</p>
+      <p>In this section we show that CBC encryption using a random IV is IND-CPA secure as long as E</p>
+      <p>is a blockcipher that is a secure PRF or PRP. Namely we show:</p>
+      <p>Theorem 5.19 [Security of CBC$ mode] Let E: K × {0, 1}n →{0, 1}n be a blockcipher</p>
+      <p>and let SE = (K, E, D) be the corresponding CBC$ symmetric encryption scheme as described in</p>
+      <p>Scheme 5.6. Let A be an adversary (for attacking the IND-CPA security of SE) that runs in time</p>
+      <p>at most t and asks at most q queries, these totaling at most σ n-bit blocks. Then there exists an</p>
+      <p>adversary B (attacking the PRF security of E) such that</p>
+      <p>Advind-cpa</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>≤</p>
+      <p>Advprf</p>
+      <p>E (B) + σ2</p>
+      <p>2n .</p>
+      <p>Furthermore B runs in time at most t′ = t + O(q + nσ) and asks at most q′ = σ oracle queries.</p>
+      <p>To prove this theorem, we proceed as before to introduce a scheme that takes as a parameter any</p>
+      <p>given family of functions G having domain and range {0, 1}n. The cases of interest are G = E and</p>
+      <p>G = Func(n,n). The algorithms of the scheme are depicted in Fig. 5.9. Note that the decryption</p>
+      <p>algorithm simply returns ⊥, so that this scheme does not have the correct decryption property.</p>
+      <p>But one can still discuss its security, and it is important for us to do so. Now, the main result is</p>
+      <p>the information-theoretic one in which the underlying function family is Func(n,n).</p>
+      <p>Lemma 5.20 [Security of CBC$ using a random function] Let A be any IND-CPA adversary</p>
+      <p>attacking SE[Func(n,n)], where the scheme is depicted in Fig. 5.9. Then</p>
+      <p>Advind-cpa</p>
+      <p>CBC$[Func(n,n)](A)</p>
+      <p>≤</p>
+      <p>σ2</p>
+      <p>2n ,</p>
+      <p>assuming A asks a number of queries whose total length is at most σ n-bit blocks.</p>
+      <p>124</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>Initialization:</p>
+      <p>00</p>
+      <p>for X ∈{0, 1}n do ρ(X) ←ρ′(X) ←undef</p>
+      <p>01</p>
+      <p>bad ←false</p>
+      <p>In response to an oracle query (M1 · · · Mm, M′</p>
+      <p>1 · · · M ′</p>
+      <p>m):</p>
+      <p>10</p>
+      <p>C0</p>
+      <p>$←{0, 1}n</p>
+      <p>11</p>
+      <p>for i ←1 to m do</p>
+      <p>12</p>
+      <p>Xi ←Mi ⊕Ci−1,</p>
+      <p>X′</p>
+      <p>i ←M′</p>
+      <p>i ⊕Ci−1</p>
+      <p>13</p>
+      <p>Ci</p>
+      <p>$←{0, 1}n</p>
+      <p>14</p>
+      <p>if Xi ∈Domain(ρ) then bad ←true , Ci ←ρ(Xi)</p>
+      <p>include this in game C0</p>
+      <p>15</p>
+      <p>if X′</p>
+      <p>i ∈Domain(ρ′) then bad ←true , Ci ←ρ′(X′</p>
+      <p>i)</p>
+      <p>include this in game C1</p>
+      <p>16</p>
+      <p>ρ(Xi) ←ρ′(X′</p>
+      <p>i) ←Ci</p>
+      <p>17</p>
+      <p>return C ←⟨C0, C1 · · · CM⟩</p>
+      <p>Figure 5.10: Games used in the analysis of CBC$. Game C0 includes the ﬁrst shaded statement</p>
+      <p>but omits the second. It CBC$-encrypts M = M1 · · · Mm. Game C1 includes the second shaded</p>
+      <p>statement but omits the ﬁrst. It CBC$-encrypts M′ = M′</p>
+      <p>1 · · · M ′</p>
+      <p>m. Game C2 omits both of the</p>
+      <p>shaded statements and is used in the analysis.</p>
+      <p>Given this lemma, the proof of Theorem 5.19 follows in the usual way, so our main task is to</p>
+      <p>prove the lemma. The proof is by another game-playing argument.</p>
+      <p>Proof: Consider the three two games speciﬁed in Fig. 5.10. Recall that Domain(f) denotes the</p>
+      <p>set of all X ∈{0, 1}n such that f(X) ̸= undef. This set grows as the game executes and more and</p>
+      <p>more queries are answered by the adversary.</p>
+      <p>The ﬁrst game, which we call game C0, precisely imitates the encryption of the left message under</p>
+      <p>a random function ρ. The second game, which we call game C1, precisely imitates the encryption</p>
+      <p>of the right message under a random function ρ. That is,</p>
+      <p>Pr[ρ</p>
+      <p>$←Func(n,n) : ACBC$ρ(LR(·,·,0)⇒1]</p>
+      <p>=</p>
+      <p>Pr[AC0⇒1] and</p>
+      <p>Pr[ρ</p>
+      <p>$←Func(n,n) : ACBC$ρ(LR(·,·,1)⇒1]</p>
+      <p>=</p>
+      <p>Pr[AC1⇒1]</p>
+      <p>Since games C0, C1, and C2 are identical-until-bad-is-set, the fundamental lemma of game playing</p>
+      <p>thus gives us that</p>
+      <p>Advind-cpa</p>
+      <p>CBC$[Func(n,n)](A)</p>
+      <p>=</p>
+      <p>Pr[ACBC$ρ(LR(·,·,1)⇒1] −Pr[ACBC$ρ(LR(·,·,0)⇒1]</p>
+      <p>≤</p>
+      <p>Pr[AC2 sets bad] .</p>
+      <p>To calculate this, note that that the domain of ρ starts oﬀwith zero points and grows one point</p>
+      <p>at at time until it reaches at most σ −1 points, so the probability that bad gets set at line 14 of</p>
+      <p>game C2 is at most (1+2+· · ·+(σ −1))/2n. To see this you have to note that each Ci−1 at line 12</p>
+      <p>is random and independent of the current domain of ρ, so each Xi = Mi ⊕Ci−1 is likewise random</p>
+      <p>and independent of the current domain of ρ. The same holds for the probability that bad gets set</p>
+      <p>at line 15. Summing, the probability that bad gets set in game C2 is at most σ2/2n, as desired.</p>
+      <p>Bellare and Rogaway</p>
+      <p>125</p>
+      <p>The theorem above addresses the maximal adversarial advantage when CBC$ is taken over a</p>
+      <p>random n-bit to n-bit function. What if we use a random n-bit to n-bit permutation, instead?</p>
+      <p>Applying the Switching Lemma (that is, Lemma 4.17) to the result above lets us bound this new</p>
+      <p>advantage.</p>
+      <p>Corollary 5.21 [Security of CBC$ using a blockcipher] Let n ≥1 be a number and let A</p>
+      <p>be an adversary that queries at most σ blocks. Then</p>
+      <p>Advind-cpa</p>
+      <p>CBC$[Perm(n)](A)</p>
+      <p>≤</p>
+      <p>2 σ2</p>
+      <p>2n</p>
+      <p>Proof: We have that</p>
+      <p>Advind-cpa</p>
+      <p>CBC$[Perm(n)](A)</p>
+      <p>=</p>
+      <p>Pr[ACBCπ(LR(·,·,1))⇒1] −Pr[ACBCπ(LR(·,·,0))⇒1]</p>
+      <p>≤</p>
+      <p></p>
+      <p>Pr[ACBCπ(LR(·,·,1))⇒1] −Pr[ACBCρ(LR(·,·,1))⇒1]</p>
+      <p></p>
+      <p>+</p>
+      <p></p>
+      <p>Pr[ACBCρ(LR(·,·,1))⇒1] −Pr[ACBCρ(LR(·,·,0))⇒1]</p>
+      <p></p>
+      <p>+</p>
+      <p></p>
+      <p>Pr[ACBCρ(LR(·,·,0))⇒1] −Pr[ACBCπ(LR(·,·,0))⇒1]</p>
+      <p></p>
+      <p>≤</p>
+      <p>0.5 σ2/2n + σ2/2n + 0.5 σ2/2n</p>
+      <p>≤</p>
+      <p>2 σ2/2n</p>
+      <p>The bound for the ﬁrst and third addend are given by the Switching Lemma and the bound for</p>
+      <p>the middle addend is by Lemma 5.20.</p>
+      <p>Finally, we can look at what happens when we use a “real” blockcipher within CBC mode.</p>
+      <p>Corollary 5.22 [Security of CBC$ using a blockcipher] Let n ≥1 and let E: K × {0, 1}n →</p>
+      <p>{0, 1}n be a blockcipher. Let A be an adversary (for attacking CBC$-encryption in the IND-CPA</p>
+      <p>sense) that runs in time at most t and that queries at most σ blocks.</p>
+      <p>Then there exists an</p>
+      <p>adversary B (for attacking blockcipher E in the PRP-CPA sense) where</p>
+      <p>Advprp</p>
+      <p>E (B)</p>
+      <p>≥</p>
+      <p>Advind-cpa</p>
+      <p>CBC$[E](A) −2 σ2</p>
+      <p>2n</p>
+      <p>and where B makes at most σ queries and runs in time at most t + O(nσ).</p>
+      <p>Proof: Adversary Bg works by running adversary Af, answering A’s oracle queries by simulating</p>
+      <p>a CBC$ oracle with CBC computed over the function g that is B’s oracle. To describe this, let</p>
+      <p>CBCC0</p>
+      <p>ρ (M1 · · · Mm) be the string C0C1 · · · Cm where Ci = ρ(Mi−1 ⊕Ci). Let CBC$</p>
+      <p>ρ(·) denote an</p>
+      <p>oracle that, on input M, returns CBCIV</p>
+      <p>ρ</p>
+      <p>for a random n-bit string IV. Adversary B is then the</p>
+      <p>following:</p>
+      <p>Algorithm Bg:</p>
+      <p>Run Af</p>
+      <p>126</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>When A makes an oracle call f(M1 · · · Mm):</p>
+      <p>Let IV</p>
+      <p>$←{0, 1}n</p>
+      <p>Computer CBCIV</p>
+      <p>ρ (M1 · · · Mm) and return this to A</p>
+      <p>When A halts, outputting a bit β</p>
+      <p>return β</p>
+      <p>Note that the running time of B is t + O(nσ), as required. To see its advantage, ﬁrst note that</p>
+      <p>Pr[BEK⇒1]</p>
+      <p>=</p>
+      <p>Pr[ACBC$</p>
+      <p>EK (·)⇒1]</p>
+      <p>and</p>
+      <p>Pr[Bπ⇒1]</p>
+      <p>=</p>
+      <p>Pr[ACBC$</p>
+      <p>π(·)⇒1]</p>
+      <p>Thus</p>
+      <p>Advprp</p>
+      <p>E (B)</p>
+      <p>=</p>
+      <p>Pr[BEK⇒1] −Pr[Bπ⇒1]</p>
+      <p>=</p>
+      <p>Pr[ACBC$</p>
+      <p>EK (·)⇒1] −Pr[ACBC$</p>
+      <p>π(·)⇒1]</p>
+      <p>=</p>
+      <p></p>
+      <p>Pr[ACBC$</p>
+      <p>EK (·)⇒1] −Pr[A$(·)⇒1]</p>
+      <p></p>
+      <p>−</p>
+      <p></p>
+      <p>Pr[ACBC$</p>
+      <p>π(·)⇒1] −Pr[A$(·)⇒1]</p>
+      <p></p>
+      <p>=</p>
+      <p>Advind-cpa</p>
+      <p>CBC$[E](A) −Advind-cpa</p>
+      <p>CBC$[Perm(n)](A)</p>
+      <p>≥</p>
+      <p>Advind-cpa</p>
+      <p>CBC$[E](A) −2 σ2</p>
+      <p>2n</p>
+      <p>concluding the proof.</p>
+      <p>We have so far shown that the IND-CPA advantage of CBC$ falls oﬀby an amount that is at</p>
+      <p>most quadratic in the number of blocks, σ, asked by the adversary. We can also give a matching</p>
+      <p>attack, showing that there actually is an adversary that obtains advantage of about σ2/2n. This</p>
+      <p>tells us that our security result is tight—there is no possibility of making the bound signiﬁcantly</p>
+      <p>better. It means that we have arrived at reasonably precise understanding of the security of CBC</p>
+      <p>encryption with a random IV.</p>
+      <p>Proposition 5.23 Let n ≥1, let E: K × {0, 1}n →{0, 1}n be a function family, and let σ ∈</p>
+      <p>[0 ..</p>
+      <p>√</p>
+      <p>2 2n/2 −1]. Then there is an adversary A that asks a single query, the query consisting of σ</p>
+      <p>blocks, runs in time O(nσ lg(σ)), and achieves advantage Advind-cpa</p>
+      <p>CBC[E](A) ≥0.15 σ2/2n and</p>
+      <p>Proof: The adversary A sets L ←0nσ, chooses R</p>
+      <p>$←{0, 1}nσ, and asks its oracle the query (L, R),</p>
+      <p>receiving in response a ciphertext C that it partitions into σ + 1 n-bit blocks, C0C1 . . . Cσ. If there</p>
+      <p>is an i, I ∈[0 .. σ] such that i &lt; I and Ci = CI then A selects the lexicographically ﬁrst such (i, I)</p>
+      <p>and answers 1 (for “right oracle”) if Ci+1 ̸= CI+1. (In this case the adversary has found a “proof”</p>
+      <p>that the oracle is a right oracle.) In all other cases the adversary outputs 0 (for “left oracle”).</p>
+      <p>The adversary described asks asks a single query of σ blocks and, using standard data struc-</p>
+      <p>ture techniques, it runs in time O(nσ lg(σ)). It remains to calculate the adversary’s advantage,</p>
+      <p>Advprp</p>
+      <p>E (A) = Pr[ARight(·,·)⇒1] −Pr[ALeft(·,·)⇒1]. The second summand is zero since when A is</p>
+      <p>Bellare and Rogaway</p>
+      <p>127</p>
+      <p>given a left encryption-oracle that oracle is encrypting the zero-string and any time Ci = CI we</p>
+      <p>must have that Ci+1 = CI+1 as well. Thus</p>
+      <p>Advprp</p>
+      <p>E (A)</p>
+      <p>=</p>
+      <p>Pr[ARight(·,·)⇒1]</p>
+      <p>=</p>
+      <p>Pr[R</p>
+      <p>$←{0, 1}nσ; K</p>
+      <p>$←K; IV</p>
+      <p>$←{0, 1}n; C</p>
+      <p>$←CBCIV</p>
+      <p>K (R) :</p>
+      <p>∃i &lt; I s.t. Ci = CI and Ci+1 ̸= CI+1 on the ﬁrst such (i, I)]</p>
+      <p>By the structure of CBC mode with a random IV it is easy to see that that when you encrypt a</p>
+      <p>random string R ∈{0, 1}nσ you get a random string C ∈{0, 1}n(σ+1). To see this, note that to make</p>
+      <p>block Ci, for i ≥1, you xor the random block Ri with Ci and apply the blockcipher. The random</p>
+      <p>block Ri is independent of Ci—it wasn’t even consulted in making Ci—and it is independent of all</p>
+      <p>of C0, . . . , Ci−1, too. The image of a uniformly selected value under a permutation is uniform. The</p>
+      <p>very ﬁrst block of ciphertext, C0, is uniform. This makes the entire string C0C1 · · · Cσ uniform. So</p>
+      <p>the probability in question is</p>
+      <p>Advprp</p>
+      <p>E (A)</p>
+      <p>=</p>
+      <p>Pr[C</p>
+      <p>$←{0, 1}n(σ+1) :</p>
+      <p>∃i &lt; I s.t. Ci = CI and Ci+1 ̸= CI+1 on the ﬁrst such (i, I)]</p>
+      <p>Now the birthday bound (Appendix A, Theorem A.1) tells us that the probability there will be</p>
+      <p>an i &lt; I such that Ci = CI is at least C(2n, σ + 1) ≥0.3σ2/2n. When there is such an i, I and</p>
+      <p>we ﬁx the lexicographically ﬁrst such i, I, note that CI+1 is still uniform and independent of Ci+1.</p>
+      <p>Independence is assured because CI+1 is obtained as EK(RI+1 ⊕CI) for a permutation EK and</p>
+      <p>a uniform random value RI+1 that is independent of CI and Ci+1. Because of this probabilistic</p>
+      <p>independence, the probability of the conjunct is just the product of the probabilities and we have</p>
+      <p>that</p>
+      <p>Advprp</p>
+      <p>E (A)</p>
+      <p>≥</p>
+      <p>0.3 σ2/2n · (1 −2−n) ≥0.15 σ2/2n</p>
+      <p>completing the proof.</p>
+    </sec>
+    <sec>
+      <title>5.9</title>
+      <p>Indistinguishability under chosen-ciphertext attack</p>
+      <p>So far we have considered privacy under chosen-plaintext attack. Sometimes we want to consider</p>
+      <p>privacy when the adversary is capable of mounting a stronger type of attack, namely a chosen-</p>
+      <p>ciphertext attack. In this type of attack, an adversary has access to a decryption oracle. It can</p>
+      <p>feed this oracle a ciphertext and get back the corresponding plaintext.</p>
+      <p>How might such a situation arise? One situation one could imagine is that an adversary at some</p>
+      <p>point gains temporary access to the equipment performing decryption. It can feed the equipment</p>
+      <p>ciphertexts and see what plaintexts emerge. (We assume it cannot directly extract the key from</p>
+      <p>the equipment, however.)</p>
+      <p>If an adversary has access to a decryption oracle, security at ﬁrst seems moot, since after all it</p>
+      <p>can decrypt anything it wants. To create a meaningful notion of security, we put a restriction on</p>
+      <p>the use of the decryption oracle. To see what this is, let us look closer at the formalization. As in</p>
+      <p>the case of chosen-plaintext attacks, we consider two worlds:</p>
+      <p>World 0: The adversary is provided the oracle EK(LR(·, ·, 0)) as well as the oracle DK(·).</p>
+      <p>128</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>World 1: The adversary is provided the oracle EK(LR(·, ·, 1)) as well as the oracle DK(·).</p>
+      <p>The adversary’s goal is the same as in the case of chosen-plaintext attacks: it wants to ﬁgure out</p>
+      <p>which world it is in. There is one easy way to do this. Namely, query the lr-encryption oracle on</p>
+      <p>two distinct, equal length messages M0, M1 to get back a ciphertext C, and now call the decryption</p>
+      <p>oracle on C. If the message returned by the decryption oracle is M0 then the adversary is in world 0,</p>
+      <p>and if the message returned by the decryption oracle is M1 then the adversary is in world 1. The</p>
+      <p>restriction we impose is simply that this call to the decryption oracle is not allowed. More generally,</p>
+      <p>call a query C to the decryption oracle illegitimate if C was previously returned by the lr-encryption</p>
+      <p>oracle; otherwise a query is legitimate. We insist that only legitimate queries are allowed. In the</p>
+      <p>formalization below, the experiment simply returns 0 if the adversary makes an illegitimate query.</p>
+      <p>(We clarify that a query C is legitimate if C is returned by the lr-encryption oracle after C was</p>
+      <p>queried to the decryption oracle.)</p>
+      <p>This restriction still leaves the adversary with a lot of power. Typically, a successful chosen-</p>
+      <p>ciphertext attack proceeds by taking a ciphertext C returned by the lr-encryption oracle, modifying</p>
+      <p>it into a related ciphertext C′, and querying the decryption oracle with C′. The attacker seeks to</p>
+      <p>create C′ in such a way that its decryption tells the attacker what the underlying message M was.</p>
+      <p>We will see this illustrated in Section 5.10 below.</p>
+      <p>The model we are considering here might seem quite artiﬁcial. If an adversary has access to a</p>
+      <p>decryption oracle, how can we prevent it from calling the decryption oracle on certain messages?</p>
+      <p>The restriction might arise due to the adversary’s having access to the decryption equipment for</p>
+      <p>a limited period of time. We imagine that after it has lost access to the decryption equipment, it</p>
+      <p>sees some ciphertexts, and we are capturing the security of these ciphertexts in the face of previous</p>
+      <p>access to the decryption oracle. Further motivation for the model will emerge when we see how</p>
+      <p>encryption schemes are used in protocols. We will see that when an encryption scheme is used</p>
+      <p>in many authenticated key-exchange protocols the adversary eﬀectively has the ability to mount</p>
+      <p>chosen-ciphertext attacks of the type we are discussing. For now let us just provide the deﬁnition</p>
+      <p>and exercise it.</p>
+      <p>Deﬁnition 5.24 Let SE = (K, E, D) be a symmetric encryption scheme, let A be an algorithm</p>
+      <p>that has access to two oracles, and let b be a bit. We consider the following experiment:</p>
+      <p>Experiment Expind-cca-b</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>K</p>
+      <p>$←K</p>
+      <p>b</p>
+      <p>$←AEK(LR(·,·,b)) , DK(·)</p>
+      <p>If A queried DK(·) on a ciphertext previously returned by EK(LR(·, ·, b))</p>
+      <p>then return 0</p>
+      <p>else return b</p>
+      <p>The IND-CCA advantage of A is deﬁned as</p>
+      <p>Advind-cca</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>=</p>
+      <p>Pr</p>
+      <p>Expind-cca-1</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>−Pr</p>
+      <p>Expind-cca-0</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>.</p>
+      <p>The conventions with regard to resource measures are the same as those used in the case of chosen-</p>
+      <p>plaintext attacks. In particular, the length of a query M0, M1 to the lr-encryption oracle is deﬁned</p>
+      <p>as the length of M0.</p>
+      <p>We consider an encryption scheme to be “secure against chosen-ciphertext attack” if a “reason-</p>
+      <p>able” adversary cannot obtain “signiﬁcant” advantage in distinguishing the cases b = 0 and b = 1</p>
+      <p>given access to the oracles, where reasonable reﬂects its resource usage. The technical notion is</p>
+      <p>called indistinguishability under chosen-ciphertext attack, denoted IND-CCA.</p>
+      <p>Bellare and Rogaway</p>
+      <p>129</p>
+    </sec>
+    <sec>
+      <title>5.10</title>
+      <p>Example chosen-ciphertext attacks</p>
+      <p>Chosen-ciphertext attacks are powerful enough to break all the standard modes of operation, even</p>
+      <p>those like CTR and CBC that are secure against chosen-plaintext attack. The one-time pad scheme</p>
+      <p>is also vulnerable to a chosen-ciphertext attack: our notion of perfect security only took into account</p>
+      <p>chosen-plaintext attacks. Let us now illustrate a few chosen-ciphertext attacks.</p>
+    </sec>
+    <sec>
+      <title>5.10.1</title>
+      <p>Attacks on the CTR schemes</p>
+      <p>Let F: K × {0, 1}n →{0, 1}n be a family of functions and let SE = (K, E, D) be the associated</p>
+      <p>CTR$ symmetric encryption scheme as described in Scheme 5.6. The weakness of the scheme that</p>
+      <p>makes it susceptible to a chosen-ciphertext attack is the following. Say ⟨r, C⟩is a ciphertext of</p>
+      <p>some n-bit message M, and we ﬂip bit i of C, resulting in a new ciphertext ⟨r, C′⟩. Let M′ be the</p>
+      <p>message obtained by decrypting the new ciphertext. Then M′ equals M with the i-th bit ﬂipped.</p>
+      <p>(You should check that you understand why.) Thus, by making a decryption oracle query of ⟨r, C′⟩</p>
+      <p>one can learn M′ and thus M. In the following, we show how this idea can be applied to break the</p>
+      <p>scheme in our model by ﬁguring out in which world an adversary has been placed.</p>
+      <p>Proposition 5.25 Let F: K × {0, 1}n →{0, 1}n be a family of functions and let SE = (K, E, D)</p>
+      <p>be the corresponding CTR$ symmetric encryption scheme as described in Scheme 5.6. Then</p>
+      <p>Advind-cca</p>
+      <p>SE</p>
+      <p>(t, 1, n, 1, 2n)</p>
+      <p>=</p>
+      <p>1</p>
+      <p>for t = O(n) plus the time for one application of F.</p>
+      <p>The advantage of this adversary is 1 even though it uses hardly any resources: just one query to</p>
+      <p>each oracle. That is clearly an indication that the scheme is insecure.</p>
+      <p>Proof of Proposition 5.25:</p>
+      <p>We will present an adversary algorithm A, having time-complexity</p>
+      <p>t, making 1 query to its lr-encryption oracle, this query being of length n, making 1 query to its</p>
+      <p>decryption oracle, this query being of length 2n, and having</p>
+      <p>Advind-cca</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>=</p>
+      <p>1 .</p>
+      <p>The Proposition follows.</p>
+      <p>Remember that the lr-encryption oracle EK(LR(·, ·, b)) takes input a pair of messages, and returns</p>
+      <p>an encryption of either the left or the right message in the pair, depending on the value of b. The</p>
+      <p>goal of A is to determine the value of b. Our adversary works like this:</p>
+      <p>Adversary AEK(LR(·,·,b)) , DK(·)</p>
+      <p>M0 ←0n ; M1 ←1n</p>
+      <p>⟨r, C⟩←EK(LR(M0, M1, b))</p>
+      <p>C′ ←C ⊕1n</p>
+      <p>M ←DK(⟨r, C′⟩)</p>
+      <p>If M = M0 then return 1 else return 0</p>
+      <p>The adversary’s single lr-encryption oracle query is the pair of distinct messages M0, M1, each one</p>
+      <p>block long. It is returned a ciphertext ⟨r, C⟩. It ﬂips the bits of C to get C′ and then feeds the</p>
+      <p>130</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>ciphertext ⟨r, C⟩to the decryption oracle. It bets on world 1 if it gets back M0, and otherwise on</p>
+      <p>world 0. Notice that ⟨r, C′⟩̸= ⟨r, C⟩, so the decryption query is legitimate. Now, we claim that</p>
+      <p>Pr</p>
+      <p>Expind-cca-1</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>1</p>
+      <p>Pr</p>
+      <p>Expind-cca-0</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>0 .</p>
+      <p>Hence Advind-cpa</p>
+      <p>SE</p>
+      <p>(A) = 1−0 = 1. And A achieved this advantage by making just one lr-encryption</p>
+      <p>oracle query, whose length, which as per our conventions is just the length of M0, is n bits, and just</p>
+      <p>one decryption oracle query, whose length is 2n bits (assuming an encoding of ⟨r, X⟩as n+|X|-bits).</p>
+      <p>So Advpr-cpa</p>
+      <p>SE</p>
+      <p>(t, 1, n, 1, 2n) = 1.</p>
+      <p>Why are the two equations claimed above true?</p>
+      <p>You have to return to the deﬁnitions of the</p>
+      <p>quantities in question, as well as the description of the scheme itself, and walk it through.</p>
+      <p>In</p>
+      <p>world 1, meaning b = 1, let ⟨r, C⟩denote the ciphertext returned by the lr-encryption oracle. Then</p>
+      <p>C = FK(r + 1) ⊕M1 = FK(r + 1) ⊕1n .</p>
+      <p>Now notice that</p>
+      <p>M</p>
+      <p>=</p>
+      <p>DK(⟨r, C′⟩)</p>
+      <p>=</p>
+      <p>FK(r + 1) ⊕C′</p>
+      <p>=</p>
+      <p>FK(r + 1) ⊕C ⊕1n</p>
+      <p>=</p>
+      <p>FK(r + 1) ⊕(FK(r + 1) ⊕1n) ⊕1n</p>
+      <p>=</p>
+      <p>0n</p>
+      <p>=</p>
+      <p>M0 .</p>
+      <p>Thus, the decryption oracle will return M0, and A will return 1. In world 0, meaning b = 0, let</p>
+      <p>⟨r, C[1]⟩denote the ciphertext returned by the lr-encryption oracle. Then</p>
+      <p>C = FK(r + 1) ⊕M0 = FK(r + 1) ⊕0n .</p>
+      <p>Now notice that</p>
+      <p>M</p>
+      <p>=</p>
+      <p>DK(⟨r, C′⟩)</p>
+      <p>=</p>
+      <p>FK(r + 1) ⊕C′</p>
+      <p>=</p>
+      <p>FK(r + 1) ⊕C ⊕1n</p>
+      <p>=</p>
+      <p>FK(r + 1) ⊕(FK(r + 1) ⊕0n) ⊕1n</p>
+      <p>=</p>
+      <p>1n</p>
+      <p>=</p>
+      <p>M1 .</p>
+      <p>Thus, the decryption oracle will return M1, and A will return 0, meaning will return 1 with</p>
+      <p>probability zero.</p>
+      <p>An attack on CTRC (cf. Scheme 5.7) is similar, and is left to the reader.</p>
+      <p>Bellare and Rogaway</p>
+      <p>131</p>
+    </sec>
+    <sec>
+      <title>5.10.2</title>
+      <p>Attack on CBC$</p>
+      <p>Let E: K × {0, 1}n →{0, 1}n be a blockcipher and let SE = (K, E, D) be the associated CBC$</p>
+      <p>symmetric encryption scheme as described in Scheme 5.4. The weakness of the scheme that makes</p>
+      <p>it susceptible to a chosen-ciphertext attack is the following. Say ⟨IV, C[1]⟩is a ciphertext of some</p>
+      <p>n-bit message M, and we ﬂip bit i of the IV, resulting in a new ciphertext ⟨IV′, C[1]⟩. Let M′</p>
+      <p>be the message obtained by decrypting the new ciphertext. Then M′ equals M with the i-th bit</p>
+      <p>ﬂipped. (You should check that you understand why by looking at Scheme 5.4.) Thus, by making</p>
+      <p>a decryption oracle query of ⟨IV′, C[1]⟩one can learn M′ and thus M. In the following, we show</p>
+      <p>how this idea can be applied to break the scheme in our model by ﬁguring out in which world an</p>
+      <p>adversary has been placed.</p>
+      <p>Proposition 5.26 Let E: K × {0, 1}n →{0, 1}n be a blockcipher and let SE = (K, E, D) be the</p>
+      <p>corresponding CBC$ encryption scheme as described in Scheme 5.4. Then</p>
+      <p>Advind-cca</p>
+      <p>SE</p>
+      <p>(t, 1, n, 1, 2n)</p>
+      <p>=</p>
+      <p>1</p>
+      <p>for t = O(n) plus the time for one application of F.</p>
+      <p>The advantage of this adversary is 1 even though it uses hardly any resources: just one query to</p>
+      <p>each oracle. That is clearly an indication that the scheme is insecure.</p>
+      <p>Proof of Proposition 5.26:</p>
+      <p>We will present an adversary A, having time-complexity t, making</p>
+      <p>1 query to its lr-encryption oracle, this query being of length n, making 1 query to its decryption</p>
+      <p>oracle, this query being of length 2n, and having</p>
+      <p>Advind-cca</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>=</p>
+      <p>1 .</p>
+      <p>The proposition follows.</p>
+      <p>Remember that the lr-encryption oracle EK(LR(·, ·, b)) takes input a pair of messages, and returns</p>
+      <p>an encryption of either the left or the right message in the pair, depending on the value of b. The</p>
+      <p>goal of A is to determine the value of b. Our adversary works like this:</p>
+      <p>Adversary AEK(LR(·,·,b)) , DK(·)</p>
+      <p>M0 ←0n ; M1 ←1n</p>
+      <p>⟨IV, C[1]⟩←EK(LR(M0, M1, b))</p>
+      <p>IV′ ←IV ⊕1n</p>
+      <p>M ←DK(⟨IV′, C[1]⟩)</p>
+      <p>If M = M0 then return 1 else return 0</p>
+      <p>The adversary’s single lr-encryption oracle query is the pair of distinct messages M0, M1, each one</p>
+      <p>block long. It is returned a ciphertext ⟨IV, C[1]⟩. It ﬂips the bits of the IV to get a new IV, IV′,</p>
+      <p>and then feeds the ciphertext ⟨IV′, C[1]⟩to the decryption oracle. It bets on world 1 if it gets back</p>
+      <p>M0, and otherwise on world 0. It is important that ⟨IV′, C[1]⟩̸= ⟨IV, C[1]⟩so the decryption oracle</p>
+      <p>query is legitimate. Now, we claim that</p>
+      <p>Pr</p>
+      <p>Expind-cca-1</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>1</p>
+      <p>Pr</p>
+      <p>Expind-cca-0</p>
+      <p>SE</p>
+      <p>(A) = 1</p>
+      <p></p>
+      <p>=</p>
+      <p>0 .</p>
+      <p>132</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>Hence Advind-cca</p>
+      <p>SE</p>
+      <p>(A) = 1−0 = 1. And A achieved this advantage by making just one lr-encryption</p>
+      <p>oracle query, whose length, which as per our conventions is just the length of M0, is n bits, and</p>
+      <p>just one decryption oracle query, whose length is 2n bits. So Advind-cca</p>
+      <p>SE</p>
+      <p>(t, 1, n, 1, 2n) = 1.</p>
+      <p>Why are the two equations claimed above true?</p>
+      <p>You have to return to the deﬁnitions of the</p>
+      <p>quantities in question, as well as the description of the scheme itself, and walk it through.</p>
+      <p>In</p>
+      <p>world 1, meaning b = 1, the lr-encryption oracle returns ⟨IV, C[1]⟩with</p>
+      <p>C[1] = EK(IV ⊕M1) = EK(IV ⊕1n) .</p>
+      <p>Now notice that</p>
+      <p>M</p>
+      <p>=</p>
+      <p>DK(⟨IV′, C[1]⟩)</p>
+      <p>=</p>
+      <p>E−1</p>
+      <p>K (C[1]) ⊕IV′</p>
+      <p>=</p>
+      <p>E−1</p>
+      <p>K (EK(IV ⊕1n)) ⊕IV′</p>
+      <p>=</p>
+      <p>(IV ⊕1n) ⊕IV′[0]</p>
+      <p>=</p>
+      <p>(IV ⊕1n) ⊕(IV ⊕1n)</p>
+      <p>=</p>
+      <p>0n</p>
+      <p>=</p>
+      <p>M0 .</p>
+      <p>Thus, the decryption oracle will return M0, and A will return 1. In world 0, meaning b = 0, the</p>
+      <p>lr-encryption oracle returns ⟨IV, C[1]⟩with</p>
+      <p>C[1] = EK(IV ⊕M0) = EK(IV ⊕0l) .</p>
+      <p>Now notice that</p>
+      <p>M</p>
+      <p>=</p>
+      <p>DK(⟨IV′, C[1]⟩)</p>
+      <p>=</p>
+      <p>E−1</p>
+      <p>K (C[1]) ⊕IV′</p>
+      <p>=</p>
+      <p>E−1</p>
+      <p>K (EK(IV ⊕0n)) ⊕IV′</p>
+      <p>=</p>
+      <p>(IV ⊕0n) ⊕IV′[0]</p>
+      <p>=</p>
+      <p>(IV ⊕0n) ⊕(IV ⊕1n)</p>
+      <p>=</p>
+      <p>1n</p>
+      <p>=</p>
+      <p>M1 .</p>
+      <p>Thus, the decryption oracle will return M1, and A will return 0, meaning will return 1 with</p>
+      <p>probability zero.</p>
+    </sec>
+    <sec>
+      <title>5.11</title>
+      <p>Historical notes</p>
+      <p>The pioneering work on the theory of encryption is that of Goldwasser and Micali [18], with reﬁne-</p>
+      <p>ments by [28, 13]. This body of work is however in the asymmetric (i.e., public key) setting, and</p>
+      <p>uses the asymptotic framework of polynomial-time adversaries and negligible success probabilities.</p>
+      <p>The treatment of symmetric encryption we are using is from [3]. In particular Deﬁnition 5.1 and</p>
+      <p>Bellare and Rogaway</p>
+      <p>133</p>
+      <p>the concrete security framework are from [3]. The analysis of the CTR and CBC mode encryption</p>
+      <p>schemes, as given in Theorems 5.13, 5.14 and 5.19 is also from [3]. The analysis of the CBC mode</p>
+      <p>here is new.</p>
+    </sec>
+    <sec>
+      <title>5.12</title>
+      <p>Problems</p>
+      <p>Problem 5.1 Formalize a notion of security against key-recovery for symmetric encryption schemes.</p>
+      <p>Then prove that IND-CPA security implies key-recovery security.</p>
+      <p>Problem 5.2 Consider the following notion of indistinguishability of an encryption scheme SE =</p>
+      <p>(K, E, D):</p>
+      <p>Advind0-cpa</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>=</p>
+      <p>Pr[K</p>
+      <p>$←K : AEK(·)⇒1] −Pr[K</p>
+      <p>$←K : AEK(0|·|⇒1] .</p>
+      <p>That is, a scheme in IND0-CPA secure if the encryption of every string looks like the encryption</p>
+      <p>of an equal number of zeros. Here we assume that whenever M is in the message space, so is 0|M|.</p>
+      <p>Prove that this notion of security is equivalent to IND-CPA security, carefully stating a pair of</p>
+      <p>theorems and proving them.</p>
+      <p>Problem 5.3 The deﬁnition above for IND0-CPA provides the adversary with no method to get,</p>
+      <p>with certitude, the encryption of a given message: when the adversary asks a query M, it might</p>
+      <p>get answered with C</p>
+      <p>$←EK(M) or it might get answered with C</p>
+      <p>$←EK(0|M|). Consider providing</p>
+      <p>the adversary an additional, “reference” oracle that always encrypts the queried string. Consider</p>
+      <p>deﬁning the corresponding advantage notion in the natural way: for an encryption scheme SE =</p>
+      <p>(K, E, D), let</p>
+      <p>Advind0-cpa∗</p>
+      <p>SE</p>
+      <p>(A)</p>
+      <p>=</p>
+      <p>Pr[K</p>
+      <p>$←K : AEK(·), EK(·)⇒1] −Pr[K</p>
+      <p>$←K : A0|M|, EK(·)⇒1]</p>
+      <p>State and prove a theorem that shows that this notion of security is equivalent to our original</p>
+      <p>IND0-CPA notion (and therefore to IND-CPA).</p>
+      <p>Problem 5.4 Let l ≥1 and m ≥2 be integers, and let SE = (K, E, D) be a given symmetric</p>
+      <p>encryption scheme whose associated plaintext space is {0, 1}n, meaning one can only encrypt mes-</p>
+      <p>sages of length n. In order to be able to encrypt longer messages, say ones of mn bits for some</p>
+      <p>m ≥1, we deﬁne a new symmetric encryption scheme SE(m) = (K, E(m), D(m)) having the same</p>
+      <p>key-generation algorithm as that of SE, plaintext space {0, 1}mn, and encryption and decryption</p>
+      <p>algorithms as depicted in Fig. 5.11.</p>
+      <p>(a) Show that</p>
+      <p>Advind-cca</p>
+      <p>SE(m) (t, 1, mn, 1, mn)</p>
+      <p>=</p>
+      <p>1</p>
+      <p>for some small t.</p>
+      <p>(b) Show that</p>
+      <p>Advind-cpa</p>
+      <p>SE(m) (t, q, mnq)</p>
+      <p>≤</p>
+      <p>Advind-cpa</p>
+      <p>SE</p>
+      <p>(t, mq, mnq)</p>
+      <p>for any t, q.</p>
+      <p>134</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>algorithm E(m)</p>
+      <p>K (M)</p>
+      <p>Break M into n-bit blocks M[1], . . . , M[m]</p>
+      <p>for i ←1 to m do</p>
+      <p>C[i] ←EK(M[i])</p>
+      <p>return C ←⟨C[1], . . . , C[m]⟩</p>
+      <p>algorithm D(m)</p>
+      <p>K (C)</p>
+      <p>Break C into n-bit blocks C[1], . . . , C[m]</p>
+      <p>for i ←1 to m do</p>
+      <p>M[i] ←DK(C[i])</p>
+      <p>if M[i] = ⊥then return ⊥</p>
+      <p>returnM ←⟨M[1], . . . , M[m]⟩</p>
+      <p>Figure 5.11: Encryption scheme for Problem 5.4.</p>
+      <p>Part (a) says that SE(m) is insecure against chosen-ciphertext attack. Note this is true regardless</p>
+      <p>of the security properties of SE, which may itself be secure against chosen-ciphertext attack. Part</p>
+      <p>(b) says that if SE is secure against chosen-plaintext attack, then so is SE(m).</p>
+      <p>Problem 5.5 The CBC-Chain mode of operation is a CBC variant in which the IV that is used for</p>
+      <p>the very ﬁrst message to be encrypted is random, while the IV used for each subsequent encrypted</p>
+      <p>message is the last block of ciphertext that was generated. The scheme is probabilistic and stateful.</p>
+      <p>Show that CBC-Chain is insecure by giving a simple and eﬃcient adversary that breaks it in the</p>
+      <p>IND-CPA sense.</p>
+      <p>Problem 5.6 Using the proof of Theorem 5.13 as a template, prove Theorem 5.14 assuming</p>
+      <p>Lemma 5.17.</p>
+      <p>Problem 5.7 Deﬁne a notion for indistinguishability from random bits, IND$-CPA. Your notion</p>
+      <p>should capture the idea that the encryption of each message M looks like a string of random bits.</p>
+      <p>Pay careful attention to the number of random bits that one outputs. Then formalize and prove</p>
+      <p>that IND$-CPA security implies IND-CPA security—but that IND-CPA security does not imply</p>
+      <p>IND$-CPA security.</p>
+      <p>Problem 5.8 Using a game-based argument, prove that CBC$[Func(n,n)] achieves IND$-CPA</p>
+      <p>security. Assume that one encodes ⟨R, C⟩as R ∥C.</p>
+      <p>Problem 5.9 Devise a secure extension to CBC$ mode that allows messages of any bit length to</p>
+      <p>be encrypted. Clearly state your encryption and decryption algorithm. Your algorithm should be</p>
+      <p>simple, should “look like” CBC mode as much as possible, and it should coincide with CBC mode</p>
+      <p>when the message being encrypted is a multiple of the blocklength. How would you prove your</p>
+      <p>algorithm secure?</p>
+      <p>Problem 5.10 An IND-CPA secure encryption scheme might not conceal identities, in the fol-</p>
+      <p>lowing sense: given a pair of ciphertexts C, C′ for equal-length messages, it might be “obvious” if</p>
+      <p>Bellare and Rogaway</p>
+      <p>135</p>
+      <p>the ciphertexts were encrypted using the same random key or were encrypted using two diﬀerent</p>
+      <p>random keys. Give an example of a (plausibly) IND-CPA secure encryption scheme that has this</p>
+      <p>is identity-revealing. Then give a deﬁnition for “identity-concealing” encryption. Your deﬁnition</p>
+      <p>should imply IND-CPA security but a scheme meeting your deﬁnition can’t be identity-revealing.</p>
+      <p>136</p>
+      <p>SYMMETRIC ENCRYPTION</p>
+      <p>Bibliography</p>
+      <p>[1] M. Bellare, A. Desai, E. Jokipii, and P. Rogaway. A Concrete Security Treatment of</p>
+      <p>Symmetric Encryption: Analysis of the DES Modes of Operation. Proceedings of the 38th</p>
+      <p>Symposium on Foundations of Computer Science, IEEE, 1997.</p>
+      <p>[2] O. Goldreich. A uniform complexity treatment of encryption and zero-knowledge. Journal</p>
+      <p>of Cryptology, Vol. 6, 1993, pp. 21-53.</p>
+      <p>[3] S. Goldwasser and S. Micali. Probabilistic encryption. J. of Computer and System Sci-</p>
+      <p>ences, Vol. 28, April 1984, pp. 270–299.</p>
+      <p>[4] S. Micali, C. Rackoff and R. Sloan. The notion of security for probabilistic cryptosys-</p>
+      <p>tems. SIAM J. of Computing, April 1988.</p>
+      <p>[5] M. Naor and M. Yung. Public-key cryptosystems provably secure against chosen ciphertext</p>
+      <p>attacks.</p>
+      <p>Proceedings of the 22nd Annual Symposium on the Theory of Computing, ACM,</p>
+      <p>1990.</p>
+      <p>[6] C. Rackoff and D. Simon. Non-interactive zero-knowledge proof of knowledge and chosen</p>
+      <p>ciphertext attack. Advances in Cryptology – CRYPTO ’91, Lecture Notes in Computer Science</p>
+      <p>Vol. 576, J. Feigenbaum ed., Springer-Verlag, 1991.</p>
+      <p>137</p>
+      <p>138</p>
+      <p>BIBLIOGRAPHY</p>
+    </sec>
+  </body>
+</book-part>
